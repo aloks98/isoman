@@ -1,0 +1,116 @@
+package ws
+
+import (
+	"encoding/json"
+	"linux-iso-manager/internal/models"
+	"log"
+)
+
+// Message types for WebSocket communication
+const (
+	MessageTypeProgress = "progress"
+	MessageTypeStatus   = "status"
+)
+
+// Message represents a WebSocket message
+type Message struct {
+	Type    string      `json:"type"`
+	Payload interface{} `json:"payload"`
+}
+
+// ProgressPayload represents a progress update message
+type ProgressPayload struct {
+	ID       string            `json:"id"`
+	Progress int               `json:"progress"`
+	Status   models.ISOStatus  `json:"status"`
+}
+
+// Hub maintains the set of active clients and broadcasts messages to them
+type Hub struct {
+	// Registered clients
+	clients map[*Client]bool
+
+	// Inbound messages from clients
+	broadcast chan []byte
+
+	// Register requests from clients
+	register chan *Client
+
+	// Unregister requests from clients
+	unregister chan *Client
+}
+
+// NewHub creates a new Hub instance
+func NewHub() *Hub {
+	return &Hub{
+		broadcast:  make(chan []byte, 256),
+		register:   make(chan *Client),
+		unregister: make(chan *Client),
+		clients:    make(map[*Client]bool),
+	}
+}
+
+// Run starts the hub's main loop
+func (h *Hub) Run() {
+	for {
+		select {
+		case client := <-h.register:
+			h.clients[client] = true
+			log.Printf("WebSocket client connected (total: %d)", len(h.clients))
+
+		case client := <-h.unregister:
+			if _, ok := h.clients[client]; ok {
+				delete(h.clients, client)
+				close(client.send)
+				log.Printf("WebSocket client disconnected (total: %d)", len(h.clients))
+			}
+
+		case message := <-h.broadcast:
+			// Broadcast to all connected clients
+			for client := range h.clients {
+				select {
+				case client.send <- message:
+				default:
+					// Client's send buffer is full, close the connection
+					close(client.send)
+					delete(h.clients, client)
+				}
+			}
+		}
+	}
+}
+
+// BroadcastProgress sends a progress update to all connected clients
+func (h *Hub) BroadcastProgress(isoID string, progress int, status models.ISOStatus) {
+	payload := ProgressPayload{
+		ID:       isoID,
+		Progress: progress,
+		Status:   status,
+	}
+
+	message := Message{
+		Type:    MessageTypeProgress,
+		Payload: payload,
+	}
+
+	// Marshal to JSON
+	data, err := json.Marshal(message)
+	if err != nil {
+		log.Printf("Error marshaling progress message: %v", err)
+		return
+	}
+
+	// Send to broadcast channel
+	select {
+	case h.broadcast <- data:
+		// Message sent successfully
+	default:
+		// Broadcast channel is full, skip this update
+		log.Printf("Warning: Broadcast channel full, skipping update for ISO %s", isoID)
+	}
+}
+
+// ClientCount returns the number of connected clients
+func (h *Hub) ClientCount() int {
+	return len(h.clients)
+}

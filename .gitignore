@@ -1,0 +1,43 @@
+# IDEs and Editors
+.idea
+.vscode/
+*.swp
+*.swo
+*~
+
+# Backend (Go)
+backend/server
+backend/*.exe
+backend/data/
+*.test
+*.out
+coverage.txt
+*.prof
+
+# Frontend (React)
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+frontend/coverage/
+
+# Logs and temp files
+*.log
+/tmp/
+*.tmp
+.tmp/
+
+# OS specific
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Go workspace
+go.work
+go.work.sum

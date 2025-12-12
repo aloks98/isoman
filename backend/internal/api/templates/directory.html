@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Index of /images/{{ .Path }}</title>
+	<script src="https://cdn.tailwindcss.com"></script>
+	<script>
+		tailwind.config = {
+			theme: {
+				extend: {
+					colors: {
+						primary: '#3b82f6',
+						secondary: '#1e293b',
+					}
+				}
+			}
+		}
+	</script>
+	<style>
+		@keyframes fadeIn {
+			from { opacity: 0; transform: translateY(-10px); }
+			to { opacity: 1; transform: translateY(0); }
+		}
+		.fade-in {
+			animation: fadeIn 0.3s ease-out;
+		}
+	</style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen">
+	<div class="container mx-auto px-4 py-8 max-w-7xl">
+		<!-- Header -->
+		<div class="mb-8 fade-in">
+			<div class="bg-white rounded-2xl shadow-lg border border-slate-200 p-8">
+				<div class="flex items-center gap-4">
+					<div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-3 shadow-md">
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" />
+						</svg>
+					</div>
+					<div>
+						<h1 class="text-3xl font-bold text-slate-800">
+							{{ if .Path }}
+								/images/<span class="text-blue-600">{{ .Path }}</span>
+							{{ else }}
+								ISO Directory
+							{{ end }}
+						</h1>
+						<p class="text-slate-600 mt-1">Browse and download Linux ISO images</p>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Directory Listing -->
+		<div class="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden fade-in">
+			{{ if .ParentPath }}
+			<div class="border-b border-slate-200 bg-slate-50">
+				<a href="{{ .ParentPath }}" class="flex items-center gap-3 p-4 hover:bg-slate-100 transition-colors group">
+					<div class="bg-slate-200 group-hover:bg-slate-300 rounded-lg p-2 transition-colors">
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+						</svg>
+					</div>
+					<span class="font-medium text-slate-700 group-hover:text-blue-600 transition-colors">Parent Directory</span>
+				</a>
+			</div>
+			{{ end }}
+
+			<div class="divide-y divide-slate-100">
+				{{ range .Files }}
+				<a href="{{ .Path }}" class="flex items-center justify-between p-4 hover:bg-blue-50 transition-all group">
+					<div class="flex items-center gap-3 flex-1 min-w-0">
+						<!-- Icon -->
+						<div class="flex-shrink-0">
+							{{ if .IsDir }}
+								<!-- Folder Icon -->
+								<div class="bg-blue-100 group-hover:bg-blue-200 rounded-lg p-2.5 transition-colors">
+									<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+									</svg>
+								</div>
+							{{ else }}
+								{{ if or (hasSuffix .Name ".iso") (hasSuffix .Name ".img") }}
+									<!-- ISO/Disc Icon -->
+									<div class="bg-purple-100 group-hover:bg-purple-200 rounded-lg p-2.5 transition-colors">
+										<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-12.5c-2.49 0-4.5 2.01-4.5 4.5s2.01 4.5 4.5 4.5 4.5-2.01 4.5-4.5-2.01-4.5-4.5-4.5zm0 6.5c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z" />
+										</svg>
+									</div>
+								{{ else if or (hasSuffix .Name ".sha256") (hasSuffix .Name ".sha512") (hasSuffix .Name ".md5") }}
+									<!-- Checksum/Shield Icon -->
+									<div class="bg-green-100 group-hover:bg-green-200 rounded-lg p-2.5 transition-colors">
+										<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+										</svg>
+									</div>
+								{{ else }}
+									<!-- Generic Document Icon -->
+									<div class="bg-slate-100 group-hover:bg-slate-200 rounded-lg p-2.5 transition-colors">
+										<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+										</svg>
+									</div>
+								{{ end }}
+							{{ end }}
+						</div>
+
+						<!-- Name -->
+						<div class="flex-1 min-w-0">
+							<p class="font-medium text-slate-800 group-hover:text-blue-600 transition-colors truncate">
+								{{ .Name }}{{ if .IsDir }}/{{ end }}
+							</p>
+							{{ if or (hasSuffix .Name ".sha256") (hasSuffix .Name ".sha512") (hasSuffix .Name ".md5") }}
+								<p class="text-xs text-green-600 font-medium mt-0.5">
+									{{ if hasSuffix .Name ".sha256" }}SHA-256 Checksum
+									{{ else if hasSuffix .Name ".sha512" }}SHA-512 Checksum
+									{{ else if hasSuffix .Name ".md5" }}MD5 Checksum
+									{{ end }}
+								</p>
+							{{ end }}
+						</div>
+					</div>
+
+					<!-- Metadata -->
+					<div class="flex items-center gap-6 text-sm text-slate-600 ml-4">
+						<div class="hidden md:flex items-center gap-2">
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+							</svg>
+							<span class="font-mono font-medium min-w-[80px] text-right">{{ .Size }}</span>
+						</div>
+						<div class="hidden lg:flex items-center gap-2">
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+							</svg>
+							<span class="min-w-[140px]">{{ .Modified }}</span>
+						</div>
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-400 group-hover:text-blue-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+						</svg>
+					</div>
+				</a>
+				{{ end }}
+			</div>
+
+			{{ if not .Files }}
+			<div class="p-12 text-center">
+				<div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 mb-4">
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+					</svg>
+				</div>
+				<p class="text-slate-600 font-medium">This directory is empty</p>
+			</div>
+			{{ end }}
+		</div>
+
+		<!-- Footer -->
+		<div class="mt-6 text-center text-sm text-slate-500 fade-in">
+			<p>Powered by <span class="font-semibold text-slate-700">ISOMan</span></p>
+		</div>
+	</div>
+</body>
+</html>
