@@ -10,15 +10,14 @@ import (
 	"fmt"
 	"hash"
 	"io"
-	"linux-iso-manager/internal/httputil"
 	"os"
 	"strings"
 	"time"
+
+	"linux-iso-manager/internal/httputil"
 )
 
-// ComputeHash computes the hash of a file using the specified hash type
-// Supports: sha256, sha512, md5
-// Streams the file to avoid memory issues with large ISOs
+// Streams the file to avoid memory issues with large ISOs.
 func ComputeHash(filepath string, hashType string) (string, error) {
 	file, err := os.Open(filepath)
 	if err != nil {
@@ -46,8 +45,7 @@ func ComputeHash(filepath string, hashType string) (string, error) {
 	return fmt.Sprintf("%x", hasher.Sum(nil)), nil
 }
 
-// FetchExpectedChecksum downloads a checksum file and parses it to find the expected hash
-// for the given filename
+// for the given filename.
 func FetchExpectedChecksum(checksumURL, filename string) (string, error) {
 	// Use context with timeout for checksum download
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -61,9 +59,7 @@ func FetchExpectedChecksum(checksumURL, filename string) (string, error) {
 	return ParseChecksumFile(bytes.NewReader(data), filename)
 }
 
-// ParseChecksumFile parses a checksum file to find the hash for the given filename
-// Supports standard format: "hash  filename" or "hash *filename"
-// Handles comments (lines starting with #)
+// Handles comments (lines starting with #).
 func ParseChecksumFile(reader io.Reader, filename string) (string, error) {
 	scanner := bufio.NewScanner(reader)
 

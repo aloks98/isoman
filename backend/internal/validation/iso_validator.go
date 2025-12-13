@@ -2,12 +2,13 @@ package validation
 
 import (
 	"fmt"
-	"linux-iso-manager/internal/constants"
 	"net/url"
 	"strings"
+
+	"linux-iso-manager/internal/constants"
 )
 
-// ISOCreateRequest validation
+// ISOCreateRequest validation.
 type ISOCreateRequest struct {
 	Name         string `json:"name"`
 	Version      string `json:"version"`
@@ -18,7 +19,7 @@ type ISOCreateRequest struct {
 	ChecksumType string `json:"checksum_type"`
 }
 
-// ValidationError represents a validation error
+// ValidationError represents a validation error.
 type ValidationError struct {
 	Field   string
 	Message string
@@ -28,7 +29,7 @@ func (e *ValidationError) Error() string {
 	return fmt.Sprintf("%s: %s", e.Field, e.Message)
 }
 
-// ValidationErrors represents multiple validation errors
+// ValidationErrors represents multiple validation errors.
 type ValidationErrors struct {
 	Errors []ValidationError
 }
@@ -55,7 +56,7 @@ func (e *ValidationErrors) HasErrors() bool {
 	return len(e.Errors) > 0
 }
 
-// ValidateISOCreateRequest validates an ISO create request
+// ValidateISOCreateRequest validates an ISO create request.
 func ValidateISOCreateRequest(req *ISOCreateRequest) error {
 	if req == nil {
 		return fmt.Errorf("request cannot be nil")
@@ -119,7 +120,7 @@ func ValidateISOCreateRequest(req *ISOCreateRequest) error {
 	return nil
 }
 
-// isValidHTTPURL checks if a string is a valid HTTP or HTTPS URL
+// isValidHTTPURL checks if a string is a valid HTTP or HTTPS URL.
 func isValidHTTPURL(urlStr string) bool {
 	u, err := url.Parse(urlStr)
 	if err != nil {

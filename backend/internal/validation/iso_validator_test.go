@@ -7,10 +7,10 @@ import (
 
 func TestValidateISOCreateRequest(t *testing.T) {
 	tests := []struct {
-		name    string
 		req     *ISOCreateRequest
-		wantErr bool
+		name    string
 		errMsg  string
+		wantErr bool
 	}{
 		{
 			name: "valid request",

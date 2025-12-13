@@ -2,25 +2,26 @@ package api
 
 import (
 	"errors"
+	"net/http"
+	"strings"
+	"time"
+
 	"linux-iso-manager/internal/constants"
 	"linux-iso-manager/internal/fileutil"
 	"linux-iso-manager/internal/pathutil"
 	"linux-iso-manager/internal/service"
 	"linux-iso-manager/internal/validation"
-	"net/http"
-	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
-// Handlers holds references to service layer and storage directory
+// Handlers holds references to service layer and storage directory.
 type Handlers struct {
 	isoService *service.ISOService
 	isoDir     string
 }
 
-// NewHandlers creates a new Handlers instance
+// NewHandlers creates a new Handlers instance.
 func NewHandlers(isoService *service.ISOService, isoDir string) *Handlers {
 	return &Handlers{
 		isoService: isoService,
@@ -28,7 +29,7 @@ func NewHandlers(isoService *service.ISOService, isoDir string) *Handlers {
 	}
 }
 
-// ListISOs returns all ISOs ordered by created_at DESC
+// ListISOs returns all ISOs ordered by created_at DESC.
 func (h *Handlers) ListISOs(c *gin.Context) {
 	isos, err := h.isoService.ListISOs()
 	if err != nil {
@@ -41,7 +42,7 @@ func (h *Handlers) ListISOs(c *gin.Context) {
 	})
 }
 
-// GetISO returns a single ISO by ID
+// GetISO returns a single ISO by ID.
 func (h *Handlers) GetISO(c *gin.Context) {
 	id := c.Param("id")
 
@@ -54,7 +55,7 @@ func (h *Handlers) GetISO(c *gin.Context) {
 	SuccessResponse(c, http.StatusOK, iso)
 }
 
-// CreateISO creates a new ISO download
+// CreateISO creates a new ISO download.
 func (h *Handlers) CreateISO(c *gin.Context) {
 	var req validation.ISOCreateRequest
 
@@ -80,7 +81,6 @@ func (h *Handlers) CreateISO(c *gin.Context) {
 		ChecksumURL:  req.ChecksumURL,
 		ChecksumType: req.ChecksumType,
 	})
-
 	if err != nil {
 		// Check for specific error types
 		var existsErr *service.ISOAlreadyExistsError
@@ -113,7 +113,7 @@ func (h *Handlers) CreateISO(c *gin.Context) {
 	SuccessResponseWithMessage(c, http.StatusCreated, iso, "ISO download queued successfully")
 }
 
-// DeleteISO deletes an ISO file and database record
+// DeleteISO deletes an ISO file and database record.
 func (h *Handlers) DeleteISO(c *gin.Context) {
 	id := c.Param("id")
 
@@ -147,7 +147,7 @@ func (h *Handlers) DeleteISO(c *gin.Context) {
 	NoContentResponse(c)
 }
 
-// RetryISO retries a failed download
+// RetryISO retries a failed download.
 func (h *Handlers) RetryISO(c *gin.Context) {
 	id := c.Param("id")
 
@@ -169,7 +169,7 @@ func (h *Handlers) RetryISO(c *gin.Context) {
 	SuccessResponseWithMessage(c, http.StatusOK, iso, "Download retry queued successfully")
 }
 
-// HealthCheck returns server health status
+// HealthCheck returns server health status.
 func (h *Handlers) HealthCheck(c *gin.Context) {
 	SuccessResponse(c, http.StatusOK, gin.H{
 		"status": "ok",

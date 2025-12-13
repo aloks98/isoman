@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// SetupRoutes configures all routes and middleware
+// SetupRoutes configures all routes and middleware.
 func SetupRoutes(isoService *service.ISOService, isoDir string, wsHub *ws.Hub, cfg *config.Config) *gin.Engine {
 	// Set Gin to release mode for production (can be overridden by GIN_MODE env var)
 	// gin.SetMode(gin.ReleaseMode)

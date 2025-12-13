@@ -1,12 +1,13 @@
 package ws
 
 import (
-	"linux-iso-manager/internal/models"
 	"testing"
 	"time"
+
+	"linux-iso-manager/internal/models"
 )
 
-// TestNewHub tests hub creation
+// TestNewHub tests hub creation.
 func TestNewHub(t *testing.T) {
 	hub := NewHub()
 
@@ -31,7 +32,7 @@ func TestNewHub(t *testing.T) {
 	}
 }
 
-// TestHubClientCount tests the ClientCount method
+// TestHubClientCount tests the ClientCount method.
 func TestHubClientCount(t *testing.T) {
 	hub := NewHub()
 
@@ -40,7 +41,7 @@ func TestHubClientCount(t *testing.T) {
 	}
 }
 
-// TestHubBroadcastProgress tests broadcasting progress messages
+// TestHubBroadcastProgress tests broadcasting progress messages.
 func TestHubBroadcastProgress(t *testing.T) {
 	hub := NewHub()
 	go hub.Run()
@@ -58,7 +59,7 @@ func TestHubBroadcastProgress(t *testing.T) {
 	// This test mainly verifies the broadcast doesn't block or panic
 }
 
-// TestHubBroadcastProgressFullChannel tests behavior when broadcast channel is full
+// TestHubBroadcastProgressFullChannel tests behavior when broadcast channel is full.
 func TestHubBroadcastProgressFullChannel(t *testing.T) {
 	hub := NewHub()
 	// Don't start hub.Run() so broadcast channel will fill up
@@ -83,7 +84,7 @@ func TestHubBroadcastProgressFullChannel(t *testing.T) {
 	}
 }
 
-// TestHubRegisterClient tests client registration
+// TestHubRegisterClient tests client registration.
 func TestHubRegisterClient(t *testing.T) {
 	hub := NewHub()
 	go hub.Run()
@@ -106,7 +107,7 @@ func TestHubRegisterClient(t *testing.T) {
 	}
 }
 
-// TestHubUnregisterClient tests client unregistration
+// TestHubUnregisterClient tests client unregistration.
 func TestHubUnregisterClient(t *testing.T) {
 	hub := NewHub()
 	go hub.Run()
@@ -136,7 +137,7 @@ func TestHubUnregisterClient(t *testing.T) {
 	}
 }
 
-// TestHubBroadcastToClients tests that messages are broadcast to all clients
+// TestHubBroadcastToClients tests that messages are broadcast to all clients.
 func TestHubBroadcastToClients(t *testing.T) {
 	hub := NewHub()
 	go hub.Run()
@@ -176,7 +177,7 @@ func TestHubBroadcastToClients(t *testing.T) {
 	}
 }
 
-// TestHubRemoveSlowConsumer tests that slow consumers are removed
+// TestHubRemoveSlowConsumer tests that slow consumers are removed.
 func TestHubRemoveSlowConsumer(t *testing.T) {
 	hub := NewHub()
 	go hub.Run()

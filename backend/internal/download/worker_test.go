@@ -1,12 +1,10 @@
 package download
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
-	"linux-iso-manager/internal/config"
-	"linux-iso-manager/internal/db"
-	"linux-iso-manager/internal/models"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -14,15 +12,19 @@ import (
 	"testing"
 	"time"
 
+	"linux-iso-manager/internal/config"
+	"linux-iso-manager/internal/db"
+	"linux-iso-manager/internal/models"
+
 	"github.com/google/uuid"
 )
 
-// setupTestWorker creates a test database and worker
+// setupTestWorker creates a test database and worker.
 func setupTestWorker(t *testing.T) (*Worker, *db.DB, string, func()) {
 	// Create temp directory for test files
 	tmpDir := t.TempDir()
 	isoDir := filepath.Join(tmpDir, "isos")
-	os.MkdirAll(isoDir, 0755)
+	os.MkdirAll(isoDir, 0o755)
 
 	// Create test database
 	dbPath := filepath.Join(tmpDir, "test.db")
@@ -46,7 +48,7 @@ func setupTestWorker(t *testing.T) (*Worker, *db.DB, string, func()) {
 	return worker, database, isoDir, cleanup
 }
 
-// TestWorkerDownloadSuccess tests successful download
+// TestWorkerDownloadSuccess tests successful download.
 func TestWorkerDownloadSuccess(t *testing.T) {
 	worker, database, isoDir, cleanup := setupTestWorker(t)
 	defer cleanup()
@@ -93,7 +95,7 @@ func TestWorkerDownloadSuccess(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to read downloaded file: %v", err)
 	}
-	if string(content) != string(testContent) {
+	if !bytes.Equal(content, testContent) {
 		t.Errorf("File content mismatch: got %q, want %q", content, testContent)
 	}
 
@@ -120,7 +122,7 @@ func TestWorkerDownloadSuccess(t *testing.T) {
 	}
 }
 
-// TestWorkerDownloadWithChecksum tests download with checksum verification
+// TestWorkerDownloadWithChecksum tests download with checksum verification.
 func TestWorkerDownloadWithChecksum(t *testing.T) {
 	worker, database, isoDir, cleanup := setupTestWorker(t)
 	defer cleanup()
@@ -198,7 +200,7 @@ func TestWorkerDownloadWithChecksum(t *testing.T) {
 	}
 }
 
-// TestWorkerDownloadFailure tests download failure handling
+// TestWorkerDownloadFailure tests download failure handling.
 func TestWorkerDownloadFailure(t *testing.T) {
 	worker, database, _, cleanup := setupTestWorker(t)
 	defer cleanup()
@@ -246,7 +248,7 @@ func TestWorkerDownloadFailure(t *testing.T) {
 	}
 }
 
-// TestWorkerDownloadCancellation tests context cancellation
+// TestWorkerDownloadCancellation tests context cancellation.
 func TestWorkerDownloadCancellation(t *testing.T) {
 	worker, database, _, cleanup := setupTestWorker(t)
 	defer cleanup()
@@ -293,7 +295,7 @@ func TestWorkerDownloadCancellation(t *testing.T) {
 	// Wait for download to finish
 	err := <-done
 	if err == nil {
-		t.Fatal("Expected download to be cancelled, but it succeeded")
+		t.Fatal("Expected download to be canceled, but it succeeded")
 	}
 
 	// Verify status is failed with cancellation message
@@ -306,12 +308,12 @@ func TestWorkerDownloadCancellation(t *testing.T) {
 		t.Errorf("Status should be 'failed', got: %s", updatedISO.Status)
 	}
 
-	if updatedISO.ErrorMessage != "Download cancelled" {
+	if updatedISO.ErrorMessage != "Download canceled" {
 		t.Errorf("ErrorMessage should be 'Download cancelled', got: %s", updatedISO.ErrorMessage)
 	}
 }
 
-// TestWorkerProgressCallback tests progress callback
+// TestWorkerProgressCallback tests progress callback.
 func TestWorkerProgressCallback(t *testing.T) {
 	worker, database, _, cleanup := setupTestWorker(t)
 	defer cleanup()
@@ -372,7 +374,7 @@ func TestWorkerProgressCallback(t *testing.T) {
 	}
 }
 
-// TestWorkerChecksumMismatch tests checksum verification failure
+// TestWorkerChecksumMismatch tests checksum verification failure.
 func TestWorkerChecksumMismatch(t *testing.T) {
 	worker, database, _, cleanup := setupTestWorker(t)
 	defer cleanup()
@@ -435,7 +437,7 @@ func TestWorkerChecksumMismatch(t *testing.T) {
 	}
 }
 
-// TestWorkerNestedDirectoryCreation tests that nested directories are created
+// TestWorkerNestedDirectoryCreation tests that nested directories are created.
 func TestWorkerNestedDirectoryCreation(t *testing.T) {
 	worker, database, isoDir, cleanup := setupTestWorker(t)
 	defer cleanup()
@@ -477,7 +479,7 @@ func TestWorkerNestedDirectoryCreation(t *testing.T) {
 	}
 }
 
-// TestWorkerTempFileCleanup tests that temp files are cleaned up on error
+// TestWorkerTempFileCleanup tests that temp files are cleaned up on error.
 func TestWorkerTempFileCleanup(t *testing.T) {
 	worker, database, isoDir, cleanup := setupTestWorker(t)
 	defer cleanup()
@@ -516,7 +518,7 @@ func TestWorkerTempFileCleanup(t *testing.T) {
 	}
 }
 
-// Helper to create a test HTTP server that serves content
+// Helper to create a test HTTP server that serves content.
 func createTestServer(content []byte) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(content)))

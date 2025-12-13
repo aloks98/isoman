@@ -2,14 +2,15 @@ package models
 
 import (
 	"fmt"
-	"linux-iso-manager/internal/constants"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
+
+	"linux-iso-manager/internal/constants"
 )
 
-// ISOStatus represents the status of an ISO download
+// ISOStatus represents the status of an ISO download.
 type ISOStatus string
 
 const (
@@ -20,30 +21,30 @@ const (
 	StatusFailed      ISOStatus = "failed"
 )
 
-// ISO represents an ISO file record in the database
+// ISO represents an ISO file record in the database.
 type ISO struct {
-	ID           string     `json:"id"`
-	Name         string     `json:"name"`          // Normalized: "alpine", "ubuntu"
-	Version      string     `json:"version"`       // "3.19.1", "24.04", "rolling", etc.
-	Arch         string     `json:"arch"`          // "x86_64", "aarch64", "arm64"
-	Edition      string     `json:"edition"`       // "minimal", "desktop", "server", "" (optional)
-	FileType     string     `json:"file_type"`     // "iso", "qcow2", "vmdk", etc.
-	Filename     string     `json:"filename"`      // Computed: "alpine-3.19.1-minimal-x86_64.iso"
-	FilePath     string     `json:"file_path"`     // Computed: "alpine/3.19.1/x86_64/alpine-3.19.1-minimal-x86_64.iso"
-	DownloadLink string     `json:"download_link"` // Computed: "/images/alpine/3.19.1/x86_64/alpine-3.19.1-minimal-x86_64.iso"
-	SizeBytes    int64      `json:"size_bytes"`
-	Checksum     string     `json:"checksum"`
+	CreatedAt    time.Time  `json:"created_at"`
+	CompletedAt  *time.Time `json:"completed_at"`
+	DownloadLink string     `json:"download_link"`
 	ChecksumType string     `json:"checksum_type"`
+	Edition      string     `json:"edition"`
+	FileType     string     `json:"file_type"`
+	Filename     string     `json:"filename"`
+	FilePath     string     `json:"file_path"`
+	ID           string     `json:"id"`
+	Name         string     `json:"name"`
+	Checksum     string     `json:"checksum"`
+	Arch         string     `json:"arch"`
 	DownloadURL  string     `json:"download_url"`
 	ChecksumURL  string     `json:"checksum_url"`
 	Status       ISOStatus  `json:"status"`
-	Progress     int        `json:"progress"`
+	Version      string     `json:"version"`
 	ErrorMessage string     `json:"error_message"`
-	CreatedAt    time.Time  `json:"created_at"`
-	CompletedAt  *time.Time `json:"completed_at"`
+	Progress     int        `json:"progress"`
+	SizeBytes    int64      `json:"size_bytes"`
 }
 
-// CreateISORequest represents the request to create a new ISO download
+// CreateISORequest represents the request to create a new ISO download.
 type CreateISORequest struct {
 	Name         string `json:"name" binding:"required"`
 	Version      string `json:"version" binding:"required"`
@@ -54,9 +55,7 @@ type CreateISORequest struct {
 	ChecksumType string `json:"checksum_type" binding:"omitempty,oneof=sha256 sha512 md5"`
 }
 
-// NormalizeName converts a display name to a normalized storage name
-// "Alpine Linux" -> "alpine"
-// "Ubuntu Server" -> "ubuntu-server"
+// "Ubuntu Server" -> "ubuntu-server".
 func NormalizeName(name string) string {
 	// Convert to lowercase and trim
 	name = strings.ToLower(strings.TrimSpace(name))
@@ -78,7 +77,7 @@ func NormalizeName(name string) string {
 	return name
 }
 
-// DetectFileType extracts and validates the file type from a URL
+// DetectFileType extracts and validates the file type from a URL.
 func DetectFileType(url string) (string, error) {
 	ext := filepath.Ext(url)
 	ext = strings.ToLower(strings.TrimPrefix(ext, "."))
@@ -91,9 +90,7 @@ func DetectFileType(url string) (string, error) {
 	return ext, nil
 }
 
-// GenerateFilename creates a filename from components
-// alpine + 3.19.1 + minimal + x86_64 + iso -> "alpine-3.19.1-minimal-x86_64.iso"
-// alpine + 3.19.1 + "" + x86_64 + iso -> "alpine-3.19.1-x86_64.iso"
+// alpine + 3.19.1 + "" + x86_64 + iso -> "alpine-3.19.1-x86_64.iso".
 func GenerateFilename(name, version, edition, arch, fileType string) string {
 	parts := []string{name, version}
 	if edition != "" {
@@ -105,22 +102,17 @@ func GenerateFilename(name, version, edition, arch, fileType string) string {
 	return fmt.Sprintf("%s.%s", filename, fileType)
 }
 
-// GenerateFilePath creates the full relative path for storage
-// alpine + 3.19.1 + x86_64 + alpine-3.19.1-x86_64.iso
-// -> "alpine/3.19.1/x86_64/alpine-3.19.1-x86_64.iso"
+// -> "alpine/3.19.1/x86_64/alpine-3.19.1-x86_64.iso".
 func GenerateFilePath(name, version, arch, filename string) string {
 	return filepath.Join(name, version, arch, filename)
 }
 
-// GenerateDownloadLink creates the public download URL
-// "alpine/3.19.1/x86_64/alpine-3.19.1-x86_64.iso"
-// -> "/images/alpine/3.19.1/x86_64/alpine-3.19.1-x86_64.iso"
+// -> "/images/alpine/3.19.1/x86_64/alpine-3.19.1-x86_64.iso".
 func GenerateDownloadLink(filePath string) string {
 	return "/images/" + filepath.ToSlash(filePath)
 }
 
-// ExtractFilenameFromURL extracts the original filename from a download URL
-// This is used for checksum verification as checksum files reference the original filename
+// This is used for checksum verification as checksum files reference the original filename.
 func ExtractFilenameFromURL(url string) string {
 	// Get the last part of the URL path
 	parts := strings.Split(url, "/")
@@ -130,13 +122,12 @@ func ExtractFilenameFromURL(url string) string {
 	return ""
 }
 
-// GetOriginalFilename returns the original filename from the download URL
-// Used for checksum verification
+// Used for checksum verification.
 func (iso *ISO) GetOriginalFilename() string {
 	return ExtractFilenameFromURL(iso.DownloadURL)
 }
 
-// ComputeFields computes all derived fields for an ISO
+// ComputeFields computes all derived fields for an ISO.
 func (iso *ISO) ComputeFields() {
 	iso.Name = NormalizeName(iso.Name)
 	iso.Filename = GenerateFilename(iso.Name, iso.Version, iso.Edition, iso.Arch, iso.FileType)

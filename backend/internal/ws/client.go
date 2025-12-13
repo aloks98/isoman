@@ -10,16 +10,16 @@ import (
 )
 
 const (
-	// Time allowed to write a message to the peer
+	// Time allowed to write a message to the peer.
 	writeWait = 10 * time.Second
 
-	// Time allowed to read the next pong message from the peer
+	// Time allowed to read the next pong message from the peer.
 	pongWait = 60 * time.Second
 
-	// Send pings to peer with this period (must be less than pongWait)
+	// Send pings to peer with this period (must be less than pongWait).
 	pingPeriod = (pongWait * 9) / 10
 
-	// Maximum message size allowed from peer
+	// Maximum message size allowed from peer.
 	maxMessageSize = 512
 )
 
@@ -32,14 +32,14 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-// Client represents a WebSocket client connection
+// Client represents a WebSocket client connection.
 type Client struct {
 	hub  *Hub
 	conn *websocket.Conn
 	send chan []byte
 }
 
-// readPump pumps messages from the WebSocket connection to the hub
+// readPump pumps messages from the WebSocket connection to the hub.
 func (c *Client) readPump() {
 	defer func() {
 		c.hub.unregister <- c
@@ -66,7 +66,7 @@ func (c *Client) readPump() {
 	}
 }
 
-// writePump pumps messages from the hub to the WebSocket connection
+// writePump pumps messages from the hub to the WebSocket connection.
 func (c *Client) writePump() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
@@ -110,7 +110,7 @@ func (c *Client) writePump() {
 	}
 }
 
-// ServeWS handles WebSocket requests from clients
+// ServeWS handles WebSocket requests from clients.
 func ServeWS(hub *Hub, c *gin.Context) {
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {

@@ -2,9 +2,6 @@ package download
 
 import (
 	"fmt"
-	"linux-iso-manager/internal/config"
-	"linux-iso-manager/internal/db"
-	"linux-iso-manager/internal/models"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -12,15 +9,19 @@ import (
 	"testing"
 	"time"
 
+	"linux-iso-manager/internal/config"
+	"linux-iso-manager/internal/db"
+	"linux-iso-manager/internal/models"
+
 	"github.com/google/uuid"
 )
 
-// setupTestManager creates a test manager with database
+// setupTestManager creates a test manager with database.
 func setupTestManager(t *testing.T, workerCount int) (*Manager, *db.DB, string, func()) {
 	// Create temp directory for test files
 	tmpDir := t.TempDir()
 	isoDir := filepath.Join(tmpDir, "isos")
-	os.MkdirAll(isoDir, 0755)
+	os.MkdirAll(isoDir, 0o755)
 
 	// Create test database
 	dbPath := filepath.Join(tmpDir, "test.db")
@@ -45,7 +46,7 @@ func setupTestManager(t *testing.T, workerCount int) (*Manager, *db.DB, string, 
 	return manager, database, isoDir, cleanup
 }
 
-// TestManagerStartStop tests starting and stopping the manager
+// TestManagerStartStop tests starting and stopping the manager.
 func TestManagerStartStop(t *testing.T) {
 	manager, _, _, _ := setupTestManager(t, 2)
 	// Don't defer cleanup here since we're testing Stop explicitly
@@ -62,7 +63,7 @@ func TestManagerStartStop(t *testing.T) {
 	// Manager should stop cleanly without panic
 }
 
-// TestManagerQueueDownload tests queuing downloads
+// TestManagerQueueDownload tests queuing downloads.
 func TestManagerQueueDownload(t *testing.T) {
 	manager, database, _, cleanup := setupTestManager(t, 1)
 	defer cleanup()
@@ -110,7 +111,7 @@ func TestManagerQueueDownload(t *testing.T) {
 	}
 }
 
-// TestManagerMultipleWorkers tests multiple concurrent downloads
+// TestManagerMultipleWorkers tests multiple concurrent downloads.
 func TestManagerMultipleWorkers(t *testing.T) {
 	manager, database, _, cleanup := setupTestManager(t, 3)
 	defer cleanup()
@@ -199,7 +200,7 @@ func TestManagerMultipleWorkers(t *testing.T) {
 	}
 }
 
-// TestManagerProgressCallback tests progress callbacks
+// TestManagerProgressCallback tests progress callbacks.
 func TestManagerProgressCallback(t *testing.T) {
 	manager, database, _, cleanup := setupTestManager(t, 1)
 	defer cleanup()
@@ -254,7 +255,7 @@ func TestManagerProgressCallback(t *testing.T) {
 	}
 }
 
-// TestManagerGracefulShutdown tests that manager stops gracefully
+// TestManagerGracefulShutdown tests that manager stops gracefully.
 func TestManagerGracefulShutdown(t *testing.T) {
 	manager, database, _, cleanup := setupTestManager(t, 2)
 	defer cleanup()
@@ -298,7 +299,7 @@ func TestManagerGracefulShutdown(t *testing.T) {
 	// Stop manager (should cancel active downloads)
 	manager.Stop()
 
-	// Verify download was cancelled
+	// Verify download was canceled
 	updatedISO, err := database.GetISO(iso.ID)
 	if err != nil {
 		t.Fatalf("Failed to get updated ISO: %v", err)
@@ -308,12 +309,12 @@ func TestManagerGracefulShutdown(t *testing.T) {
 		t.Errorf("Expected status 'failed' after cancellation, got: %s", updatedISO.Status)
 	}
 
-	if updatedISO.ErrorMessage != "Download cancelled" {
+	if updatedISO.ErrorMessage != "Download canceled" {
 		t.Errorf("Expected error message 'Download cancelled', got: %s", updatedISO.ErrorMessage)
 	}
 }
 
-// TestManagerQueueCapacity tests queue buffer capacity
+// TestManagerQueueCapacity tests queue buffer capacity.
 func TestManagerQueueCapacity(t *testing.T) {
 	manager, database, _, cleanup := setupTestManager(t, 1)
 	defer cleanup()

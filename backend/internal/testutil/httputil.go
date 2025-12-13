@@ -7,17 +7,17 @@ import (
 	"testing"
 )
 
-// MockHTTPServer represents a mock HTTP server for testing
+// MockHTTPServer represents a mock HTTP server for testing.
 type MockHTTPServer struct {
 	Server         *httptest.Server
-	RequestCount   int
 	LastRequestURL string
-	ResponseCode   int
 	ResponseBody   string
-	ResponseDelay  int // in milliseconds
+	RequestCount   int
+	ResponseCode   int
+	ResponseDelay  int
 }
 
-// NewMockHTTPServer creates a new mock HTTP server
+// NewMockHTTPServer creates a new mock HTTP server.
 func NewMockHTTPServer() *MockHTTPServer {
 	mock := &MockHTTPServer{
 		ResponseCode: http.StatusOK,
@@ -35,29 +35,29 @@ func NewMockHTTPServer() *MockHTTPServer {
 	return mock
 }
 
-// URL returns the base URL of the mock server
+// URL returns the base URL of the mock server.
 func (m *MockHTTPServer) URL() string {
 	return m.Server.URL
 }
 
-// Close shuts down the mock server
+// Close shuts down the mock server.
 func (m *MockHTTPServer) Close() {
 	m.Server.Close()
 }
 
-// SetResponse sets the response code and body for the mock server
+// SetResponse sets the response code and body for the mock server.
 func (m *MockHTTPServer) SetResponse(code int, body string) {
 	m.ResponseCode = code
 	m.ResponseBody = body
 }
 
-// Reset resets the request count
+// Reset resets the request count.
 func (m *MockHTTPServer) Reset() {
 	m.RequestCount = 0
 	m.LastRequestURL = ""
 }
 
-// NewMockDownloadServer creates a mock server that simulates file downloads
+// NewMockDownloadServer creates a mock server that simulates file downloads.
 func NewMockDownloadServer(t *testing.T, fileSize int, statusCode int) *httptest.Server {
 	t.Helper()
 
@@ -79,7 +79,7 @@ func NewMockDownloadServer(t *testing.T, fileSize int, statusCode int) *httptest
 	}))
 }
 
-// NewMockChecksumServer creates a mock server that returns checksum files
+// NewMockChecksumServer creates a mock server that returns checksum files.
 func NewMockChecksumServer(t *testing.T, checksum, filename string) *httptest.Server {
 	t.Helper()
 

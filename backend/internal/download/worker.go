@@ -3,29 +3,30 @@ package download
 import (
 	"context"
 	"fmt"
+	"log/slog"
+	"os"
+	"path/filepath"
+	"time"
+
 	"linux-iso-manager/internal/db"
 	"linux-iso-manager/internal/fileutil"
 	"linux-iso-manager/internal/httputil"
 	"linux-iso-manager/internal/models"
 	"linux-iso-manager/internal/pathutil"
-	"log/slog"
-	"os"
-	"path/filepath"
-	"time"
 )
 
-// ProgressCallback is called when download progress updates
+// ProgressCallback is called when download progress updates.
 type ProgressCallback func(isoID string, progress int, status models.ISOStatus)
 
-// Worker handles the download and verification of a single ISO
+// Worker handles the download and verification of a single ISO.
 type Worker struct {
 	db               *db.DB
+	progressCallback ProgressCallback
 	isoDir           string
 	tmpDir           string
-	progressCallback ProgressCallback
 }
 
-// NewWorker creates a new download worker
+// NewWorker creates a new download worker.
 func NewWorker(database *db.DB, isoDir string, callback ProgressCallback) *Worker {
 	tmpDir := filepath.Join(isoDir, ".tmp")
 	return &Worker{
@@ -36,7 +37,7 @@ func NewWorker(database *db.DB, isoDir string, callback ProgressCallback) *Worke
 	}
 }
 
-// Process downloads and verifies an ISO
+// Process downloads and verifies an ISO.
 func (w *Worker) Process(ctx context.Context, iso *models.ISO) error {
 	// Ensure tmp directory exists
 	if err := fileutil.EnsureDirectory(w.tmpDir); err != nil {
@@ -63,10 +64,10 @@ func (w *Worker) Process(ctx context.Context, iso *models.ISO) error {
 
 	// Download the file
 	if err := w.download(ctx, iso, tmpFile); err != nil {
-		// Check if it was cancelled
+		// Check if it was canceled
 		if ctx.Err() == context.Canceled {
-			w.updateStatus(iso.ID, models.StatusFailed, 0, "Download cancelled")
-			return fmt.Errorf("download cancelled: %w", ctx.Err())
+			w.updateStatus(iso.ID, models.StatusFailed, 0, "Download canceled")
+			return fmt.Errorf("download canceled: %w", ctx.Err())
 		}
 		w.updateStatus(iso.ID, models.StatusFailed, 0, err.Error())
 		return err
@@ -135,7 +136,7 @@ func (w *Worker) Process(ctx context.Context, iso *models.ISO) error {
 	return nil
 }
 
-// download downloads the ISO file with progress tracking
+// download downloads the ISO file with progress tracking.
 func (w *Worker) download(ctx context.Context, iso *models.ISO, destPath string) error {
 	// Use httputil to download with progress tracking
 	lastProgress := -1
@@ -162,7 +163,6 @@ func (w *Worker) download(ctx context.Context, iso *models.ISO, destPath string)
 			lastUpdate = now
 		}
 	})
-
 	if err != nil {
 		return err
 	}
@@ -170,7 +170,7 @@ func (w *Worker) download(ctx context.Context, iso *models.ISO, destPath string)
 	return nil
 }
 
-// verifyChecksum verifies the downloaded file's checksum
+// verifyChecksum verifies the downloaded file's checksum.
 func (w *Worker) verifyChecksum(iso *models.ISO, filepath string) error {
 	// Fetch expected checksum using the original filename from the download URL
 	// Checksum files reference the original filename, not our computed filename
@@ -198,7 +198,7 @@ func (w *Worker) verifyChecksum(iso *models.ISO, filepath string) error {
 	return nil
 }
 
-// updateStatus updates the ISO status and triggers progress callback
+// updateStatus updates the ISO status and triggers progress callback.
 func (w *Worker) updateStatus(isoID string, status models.ISOStatus, progress int, errorMsg string) {
 	w.db.UpdateISOStatus(isoID, status, errorMsg)
 	if progress >= 0 {
@@ -210,7 +210,7 @@ func (w *Worker) updateStatus(isoID string, status models.ISOStatus, progress in
 	}
 }
 
-// downloadChecksumFile downloads the checksum file and saves it
+// downloadChecksumFile downloads the checksum file and saves it.
 func (w *Worker) downloadChecksumFile(checksumURL, destPath string) error {
 	// Use context with timeout for checksum download
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)

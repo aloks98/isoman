@@ -2,11 +2,12 @@ package download
 
 import (
 	"context"
-	"linux-iso-manager/internal/testutil"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"linux-iso-manager/internal/testutil"
 )
 
 func TestCancelDownload(t *testing.T) {
@@ -16,7 +17,7 @@ func TestCancelDownload(t *testing.T) {
 	manager := NewManager(env.DB, env.ISODir, 2)
 	defer manager.Stop()
 
-	// Test cancelling a non-existent download
+	// Test canceling a non-existent download
 	t.Run("cancel non-existent download returns false", func(t *testing.T) {
 		result := manager.CancelDownload("non-existent-id")
 		if result {
@@ -24,7 +25,7 @@ func TestCancelDownload(t *testing.T) {
 		}
 	})
 
-	// Test cancelling an active download
+	// Test canceling an active download
 	t.Run("cancel active download returns true", func(t *testing.T) {
 		// Create a test ISO
 		iso := testutil.CreateAndInsertTestISO(t, env.DB, nil)
@@ -32,7 +33,7 @@ func TestCancelDownload(t *testing.T) {
 		// Start the manager to enable workers
 		manager.Start()
 
-		// Create a context that we can verify was cancelled
+		// Create a context that we can verify was canceled
 		downloadCtx, downloadCancel := context.WithCancel(context.Background())
 		defer downloadCancel()
 
@@ -57,12 +58,12 @@ func TestCancelDownload(t *testing.T) {
 			t.Error("Expected download to not be active after cancellation")
 		}
 
-		// Verify context was cancelled
+		// Verify context was canceled
 		select {
 		case <-downloadCtx.Done():
-			// Context was cancelled as expected
+			// Context was canceled as expected
 		case <-time.After(100 * time.Millisecond):
-			t.Error("Expected download context to be cancelled")
+			t.Error("Expected download context to be canceled")
 		}
 	})
 
@@ -173,7 +174,7 @@ func TestCancelDownloadConcurrency(t *testing.T) {
 	// Wait for all cancellations to complete
 	wg.Wait()
 
-	// Verify all downloads were cancelled
+	// Verify all downloads were canceled
 	manager.mu.RLock()
 	activeCount := len(manager.activeDownloads)
 	manager.mu.RUnlock()

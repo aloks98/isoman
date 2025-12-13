@@ -1,28 +1,29 @@
 package testutil
 
 import (
-	"linux-iso-manager/internal/config"
-	"linux-iso-manager/internal/db"
-	"linux-iso-manager/internal/models"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
+	"linux-iso-manager/internal/config"
+	"linux-iso-manager/internal/db"
+	"linux-iso-manager/internal/models"
+
 	"github.com/google/uuid"
 )
 
-// TestEnv represents a complete test environment
+// TestEnv represents a complete test environment.
 type TestEnv struct {
 	DB      *db.DB
+	Config  *config.Config
+	Cleanup func()
 	ISODir  string
 	DBPath  string
 	TmpDir  string
-	Config  *config.Config
-	Cleanup func()
 }
 
-// SetupTestEnvironment creates a complete test environment with database, directories, and services
+// SetupTestEnvironment creates a complete test environment with database, directories, and services.
 func SetupTestEnvironment(t *testing.T) *TestEnv {
 	t.Helper()
 
@@ -32,10 +33,10 @@ func SetupTestEnvironment(t *testing.T) *TestEnv {
 	dbDir := filepath.Join(tmpDir, "db")
 
 	// Create directories
-	if err := os.MkdirAll(isoDir, 0755); err != nil {
+	if err := os.MkdirAll(isoDir, 0o755); err != nil {
 		t.Fatalf("Failed to create iso directory: %v", err)
 	}
-	if err := os.MkdirAll(dbDir, 0755); err != nil {
+	if err := os.MkdirAll(dbDir, 0o755); err != nil {
 		t.Fatalf("Failed to create db directory: %v", err)
 	}
 
@@ -63,7 +64,7 @@ func SetupTestEnvironment(t *testing.T) *TestEnv {
 	}
 }
 
-// SetupTestDB creates just a test database without other services
+// SetupTestDB creates just a test database without other services.
 func SetupTestDB(t *testing.T) (*db.DB, func()) {
 	t.Helper()
 
@@ -85,7 +86,7 @@ func SetupTestDB(t *testing.T) (*db.DB, func()) {
 	return database, cleanup
 }
 
-// TestISO represents test ISO fixture data
+// TestISO represents test ISO fixture data.
 type TestISO struct {
 	Name         string
 	Version      string
@@ -98,7 +99,7 @@ type TestISO struct {
 	Status       models.ISOStatus
 }
 
-// DefaultTestISO returns a default test ISO configuration
+// DefaultTestISO returns a default test ISO configuration.
 func DefaultTestISO() *TestISO {
 	return &TestISO{
 		Name:         "alpine-linux",
@@ -113,7 +114,7 @@ func DefaultTestISO() *TestISO {
 	}
 }
 
-// CreateTestISO creates a test ISO with default or custom values
+// CreateTestISO creates a test ISO with default or custom values.
 func CreateTestISO(overrides *TestISO) *models.ISO {
 	base := DefaultTestISO()
 
@@ -173,7 +174,7 @@ func CreateTestISO(overrides *TestISO) *models.ISO {
 	return iso
 }
 
-// CreateAndInsertTestISO creates a test ISO and inserts it into the database
+// CreateAndInsertTestISO creates a test ISO and inserts it into the database.
 func CreateAndInsertTestISO(t *testing.T, database *db.DB, overrides *TestISO) *models.ISO {
 	t.Helper()
 
@@ -186,7 +187,7 @@ func CreateAndInsertTestISO(t *testing.T, database *db.DB, overrides *TestISO) *
 	return iso
 }
 
-// AssertISOEqual asserts that two ISOs are equal (ignoring timestamps and IDs)
+// AssertISOEqual asserts that two ISOs are equal (ignoring timestamps and IDs).
 func AssertISOEqual(t *testing.T, expected, actual *models.ISO) {
 	t.Helper()
 
@@ -210,7 +211,7 @@ func AssertISOEqual(t *testing.T, expected, actual *models.ISO) {
 	}
 }
 
-// AssertErrorContains asserts that an error contains a specific substring
+// AssertErrorContains asserts that an error contains a specific substring.
 func AssertErrorContains(t *testing.T, err error, substring string) {
 	t.Helper()
 
@@ -223,7 +224,7 @@ func AssertErrorContains(t *testing.T, err error, substring string) {
 	}
 }
 
-// AssertNoError asserts that an error is nil
+// AssertNoError asserts that an error is nil.
 func AssertNoError(t *testing.T, err error) {
 	t.Helper()
 
@@ -232,7 +233,7 @@ func AssertNoError(t *testing.T, err error) {
 	}
 }
 
-// contains checks if a string contains a substring
+// contains checks if a string contains a substring.
 func contains(s, substr string) bool {
 	return len(s) >= len(substr) && (s == substr || len(substr) == 0 ||
 		(len(s) > 0 && len(substr) > 0 && stringContains(s, substr)))
@@ -247,36 +248,36 @@ func stringContains(s, substr string) bool {
 	return false
 }
 
-// CreateTestFile creates a test file with the given content
+// CreateTestFile creates a test file with the given content.
 func CreateTestFile(t *testing.T, dir, filename, content string) string {
 	t.Helper()
 
 	filePath := filepath.Join(dir, filename)
 
 	// Ensure directory exists
-	if err := os.MkdirAll(filepath.Dir(filePath), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(filePath), 0o755); err != nil {
 		t.Fatalf("Failed to create directory: %v", err)
 	}
 
-	if err := os.WriteFile(filePath, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(filePath, []byte(content), 0o644); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
 	return filePath
 }
 
-// FileExists checks if a file exists at the given path
+// FileExists checks if a file exists at the given path.
 func FileExists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
 }
 
-// StringContains checks if a string contains a substring (exported for use in tests)
+// StringContains checks if a string contains a substring (exported for use in tests).
 func StringContains(s, substr string) bool {
 	return contains(s, substr)
 }
 
-// AssertFileExists asserts that a file exists
+// AssertFileExists asserts that a file exists.
 func AssertFileExists(t *testing.T, path string) {
 	t.Helper()
 
@@ -285,7 +286,7 @@ func AssertFileExists(t *testing.T, path string) {
 	}
 }
 
-// AssertFileNotExists asserts that a file does not exist
+// AssertFileNotExists asserts that a file does not exist.
 func AssertFileNotExists(t *testing.T, path string) {
 	t.Helper()
 

@@ -4,11 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"linux-iso-manager/internal/config"
-	"linux-iso-manager/internal/db"
-	"linux-iso-manager/internal/download"
-	"linux-iso-manager/internal/models"
-	"linux-iso-manager/internal/service"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -16,16 +11,22 @@ import (
 	"testing"
 	"time"
 
+	"linux-iso-manager/internal/config"
+	"linux-iso-manager/internal/db"
+	"linux-iso-manager/internal/download"
+	"linux-iso-manager/internal/models"
+	"linux-iso-manager/internal/service"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
-// setupTestHandlers creates test handlers with database and manager
+// setupTestHandlers creates test handlers with database and manager.
 func setupTestHandlers(t *testing.T) (*Handlers, *db.DB, *download.Manager, string, func()) {
 	// Create temp directory
 	tmpDir := t.TempDir()
 	isoDir := filepath.Join(tmpDir, "isos")
-	os.MkdirAll(isoDir, 0755)
+	os.MkdirAll(isoDir, 0o755)
 
 	// Create test database
 	dbPath := filepath.Join(tmpDir, "test.db")
@@ -56,7 +57,7 @@ func setupTestHandlers(t *testing.T) (*Handlers, *db.DB, *download.Manager, stri
 	return handlers, database, manager, isoDir, cleanup
 }
 
-// parseAPIResponse parses the uniform API response structure
+// parseAPIResponse parses the uniform API response structure.
 func parseAPIResponse(t *testing.T, body []byte) *APIResponse {
 	var response APIResponse
 	if err := json.Unmarshal(body, &response); err != nil {
@@ -65,7 +66,7 @@ func parseAPIResponse(t *testing.T, body []byte) *APIResponse {
 	return &response
 }
 
-// TestListISOsEmpty tests listing ISOs when database is empty
+// TestListISOsEmpty tests listing ISOs when database is empty.
 func TestListISOsEmpty(t *testing.T) {
 	handlers, _, _, _, cleanup := setupTestHandlers(t)
 	defer cleanup()
@@ -73,7 +74,7 @@ func TestListISOsEmpty(t *testing.T) {
 	// Create test request
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
-	c.Request, _ = http.NewRequest("GET", "/api/isos", nil)
+	c.Request, _ = http.NewRequest("GET", "/api/isos", http.NoBody)
 
 	// Call handler
 	handlers.ListISOs(c)
@@ -104,7 +105,7 @@ func TestListISOsEmpty(t *testing.T) {
 	}
 }
 
-// TestListISOsWithData tests listing ISOs with data
+// TestListISOsWithData tests listing ISOs with data.
 func TestListISOsWithData(t *testing.T) {
 	handlers, database, _, _, cleanup := setupTestHandlers(t)
 	defer cleanup()
@@ -128,7 +129,7 @@ func TestListISOsWithData(t *testing.T) {
 	// Create test request
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
-	c.Request, _ = http.NewRequest("GET", "/api/isos", nil)
+	c.Request, _ = http.NewRequest("GET", "/api/isos", http.NoBody)
 
 	// Call handler
 	handlers.ListISOs(c)
@@ -159,7 +160,7 @@ func TestListISOsWithData(t *testing.T) {
 	}
 }
 
-// TestGetISOSuccess tests getting an ISO by ID
+// TestGetISOSuccess tests getting an ISO by ID.
 func TestGetISOSuccess(t *testing.T) {
 	handlers, database, _, _, cleanup := setupTestHandlers(t)
 	defer cleanup()
@@ -181,7 +182,7 @@ func TestGetISOSuccess(t *testing.T) {
 	// Create test request
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
-	c.Request, _ = http.NewRequest("GET", fmt.Sprintf("/api/isos/%s", iso.ID), nil)
+	c.Request, _ = http.NewRequest("GET", fmt.Sprintf("/api/isos/%s", iso.ID), http.NoBody)
 	c.Params = gin.Params{{Key: "id", Value: iso.ID}}
 
 	// Call handler
@@ -208,7 +209,7 @@ func TestGetISOSuccess(t *testing.T) {
 	}
 }
 
-// TestGetISONotFound tests getting non-existent ISO
+// TestGetISONotFound tests getting non-existent ISO.
 func TestGetISONotFound(t *testing.T) {
 	handlers, _, _, _, cleanup := setupTestHandlers(t)
 	defer cleanup()
@@ -217,7 +218,7 @@ func TestGetISONotFound(t *testing.T) {
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	fakeID := uuid.New().String()
-	c.Request, _ = http.NewRequest("GET", fmt.Sprintf("/api/isos/%s", fakeID), nil)
+	c.Request, _ = http.NewRequest("GET", fmt.Sprintf("/api/isos/%s", fakeID), http.NoBody)
 	c.Params = gin.Params{{Key: "id", Value: fakeID}}
 
 	// Call handler
@@ -229,7 +230,7 @@ func TestGetISONotFound(t *testing.T) {
 	}
 }
 
-// TestCreateISOSuccess tests creating a new ISO
+// TestCreateISOSuccess tests creating a new ISO.
 func TestCreateISOSuccess(t *testing.T) {
 	handlers, database, _, _, cleanup := setupTestHandlers(t)
 	defer cleanup()
@@ -305,7 +306,7 @@ func TestCreateISOSuccess(t *testing.T) {
 	}
 }
 
-// TestCreateISODuplicate tests creating duplicate ISO
+// TestCreateISODuplicate tests creating duplicate ISO.
 func TestCreateISODuplicate(t *testing.T) {
 	handlers, database, _, _, cleanup := setupTestHandlers(t)
 	defer cleanup()
@@ -362,7 +363,7 @@ func TestCreateISODuplicate(t *testing.T) {
 	}
 }
 
-// TestCreateISOInvalidRequest tests creating ISO with invalid request
+// TestCreateISOInvalidRequest tests creating ISO with invalid request.
 func TestCreateISOInvalidRequest(t *testing.T) {
 	handlers, _, _, _, cleanup := setupTestHandlers(t)
 	defer cleanup()
@@ -388,7 +389,7 @@ func TestCreateISOInvalidRequest(t *testing.T) {
 	}
 }
 
-// TestCreateISOUnsupportedFileType tests creating ISO with unsupported file type
+// TestCreateISOUnsupportedFileType tests creating ISO with unsupported file type.
 func TestCreateISOUnsupportedFileType(t *testing.T) {
 	handlers, _, _, _, cleanup := setupTestHandlers(t)
 	defer cleanup()
@@ -415,7 +416,7 @@ func TestCreateISOUnsupportedFileType(t *testing.T) {
 	}
 }
 
-// TestDeleteISOSuccess tests deleting an ISO
+// TestDeleteISOSuccess tests deleting an ISO.
 func TestDeleteISOSuccess(t *testing.T) {
 	handlers, database, _, isoDir, cleanup := setupTestHandlers(t)
 	defer cleanup()
@@ -436,13 +437,13 @@ func TestDeleteISOSuccess(t *testing.T) {
 
 	// Create test file
 	filePath := filepath.Join(isoDir, iso.FilePath)
-	os.MkdirAll(filepath.Dir(filePath), 0755)
-	os.WriteFile(filePath, []byte("test content"), 0644)
+	os.MkdirAll(filepath.Dir(filePath), 0o755)
+	os.WriteFile(filePath, []byte("test content"), 0o644)
 
 	// Create test request
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
-	c.Request, _ = http.NewRequest("DELETE", fmt.Sprintf("/api/isos/%s", iso.ID), nil)
+	c.Request, _ = http.NewRequest("DELETE", fmt.Sprintf("/api/isos/%s", iso.ID), http.NoBody)
 	c.Params = gin.Params{{Key: "id", Value: iso.ID}}
 
 	// Call handler
@@ -471,7 +472,7 @@ func TestDeleteISOSuccess(t *testing.T) {
 	}
 }
 
-// TestDeleteISONotFound tests deleting non-existent ISO
+// TestDeleteISONotFound tests deleting non-existent ISO.
 func TestDeleteISONotFound(t *testing.T) {
 	handlers, _, _, _, cleanup := setupTestHandlers(t)
 	defer cleanup()
@@ -480,7 +481,7 @@ func TestDeleteISONotFound(t *testing.T) {
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	fakeID := uuid.New().String()
-	c.Request, _ = http.NewRequest("DELETE", fmt.Sprintf("/api/isos/%s", fakeID), nil)
+	c.Request, _ = http.NewRequest("DELETE", fmt.Sprintf("/api/isos/%s", fakeID), http.NoBody)
 	c.Params = gin.Params{{Key: "id", Value: fakeID}}
 
 	// Call handler
@@ -492,7 +493,7 @@ func TestDeleteISONotFound(t *testing.T) {
 	}
 }
 
-// TestRetryISOSuccess tests retrying a failed download
+// TestRetryISOSuccess tests retrying a failed download.
 func TestRetryISOSuccess(t *testing.T) {
 	handlers, database, _, _, cleanup := setupTestHandlers(t)
 	defer cleanup()
@@ -516,7 +517,7 @@ func TestRetryISOSuccess(t *testing.T) {
 	// Create test request
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
-	c.Request, _ = http.NewRequest("POST", fmt.Sprintf("/api/isos/%s/retry", iso.ID), nil)
+	c.Request, _ = http.NewRequest("POST", fmt.Sprintf("/api/isos/%s/retry", iso.ID), http.NoBody)
 	c.Params = gin.Params{{Key: "id", Value: iso.ID}}
 
 	// Call handler
@@ -560,7 +561,7 @@ func TestRetryISOSuccess(t *testing.T) {
 	}
 }
 
-// TestRetryISONotFailed tests retrying a non-failed ISO
+// TestRetryISONotFailed tests retrying a non-failed ISO.
 func TestRetryISONotFailed(t *testing.T) {
 	handlers, database, _, _, cleanup := setupTestHandlers(t)
 	defer cleanup()
@@ -582,7 +583,7 @@ func TestRetryISONotFailed(t *testing.T) {
 	// Create test request
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
-	c.Request, _ = http.NewRequest("POST", fmt.Sprintf("/api/isos/%s/retry", iso.ID), nil)
+	c.Request, _ = http.NewRequest("POST", fmt.Sprintf("/api/isos/%s/retry", iso.ID), http.NoBody)
 	c.Params = gin.Params{{Key: "id", Value: iso.ID}}
 
 	// Call handler
@@ -594,7 +595,7 @@ func TestRetryISONotFailed(t *testing.T) {
 	}
 }
 
-// TestRetryISONotFound tests retrying non-existent ISO
+// TestRetryISONotFound tests retrying non-existent ISO.
 func TestRetryISONotFound(t *testing.T) {
 	handlers, _, _, _, cleanup := setupTestHandlers(t)
 	defer cleanup()
@@ -603,7 +604,7 @@ func TestRetryISONotFound(t *testing.T) {
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	fakeID := uuid.New().String()
-	c.Request, _ = http.NewRequest("POST", fmt.Sprintf("/api/isos/%s/retry", fakeID), nil)
+	c.Request, _ = http.NewRequest("POST", fmt.Sprintf("/api/isos/%s/retry", fakeID), http.NoBody)
 	c.Params = gin.Params{{Key: "id", Value: fakeID}}
 
 	// Call handler
@@ -615,7 +616,7 @@ func TestRetryISONotFound(t *testing.T) {
 	}
 }
 
-// TestHealthCheck tests health check endpoint
+// TestHealthCheck tests health check endpoint.
 func TestHealthCheck(t *testing.T) {
 	handlers, _, _, _, cleanup := setupTestHandlers(t)
 	defer cleanup()
@@ -623,7 +624,7 @@ func TestHealthCheck(t *testing.T) {
 	// Create test request
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
-	c.Request, _ = http.NewRequest("GET", "/health", nil)
+	c.Request, _ = http.NewRequest("GET", "/health", http.NoBody)
 
 	// Call handler
 	handlers.HealthCheck(c)
@@ -653,7 +654,7 @@ func TestHealthCheck(t *testing.T) {
 	}
 }
 
-// TestCreateISOWithEdition tests creating ISO with edition field
+// TestCreateISOWithEdition tests creating ISO with edition field.
 func TestCreateISOWithEdition(t *testing.T) {
 	handlers, _, _, _, cleanup := setupTestHandlers(t)
 	defer cleanup()
@@ -699,7 +700,7 @@ func TestCreateISOWithEdition(t *testing.T) {
 	}
 }
 
-// TestDeleteISOWithChecksumFile tests deleting ISO with checksum file cleanup
+// TestDeleteISOWithChecksumFile tests deleting ISO with checksum file cleanup.
 func TestDeleteISOWithChecksumFile(t *testing.T) {
 	handlers, database, _, isoDir, cleanup := setupTestHandlers(t)
 	defer cleanup()
@@ -723,11 +724,11 @@ func TestDeleteISOWithChecksumFile(t *testing.T) {
 
 	// Create test file and checksum file
 	filePath := filepath.Join(isoDir, iso.FilePath)
-	os.MkdirAll(filepath.Dir(filePath), 0755)
-	os.WriteFile(filePath, []byte("test content"), 0644)
+	os.MkdirAll(filepath.Dir(filePath), 0o755)
+	os.WriteFile(filePath, []byte("test content"), 0o644)
 
 	checksumPath := filePath + ".sha256"
-	os.WriteFile(checksumPath, []byte("abc123  test-1.0-x86_64.iso\n"), 0644)
+	os.WriteFile(checksumPath, []byte("abc123  test-1.0-x86_64.iso\n"), 0o644)
 
 	// Verify checksum file exists before deletion
 	if _, err := os.Stat(checksumPath); os.IsNotExist(err) {
@@ -737,7 +738,7 @@ func TestDeleteISOWithChecksumFile(t *testing.T) {
 	// Create test request
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
-	c.Request, _ = http.NewRequest("DELETE", fmt.Sprintf("/api/isos/%s", iso.ID), nil)
+	c.Request, _ = http.NewRequest("DELETE", fmt.Sprintf("/api/isos/%s", iso.ID), http.NoBody)
 	c.Params = gin.Params{{Key: "id", Value: iso.ID}}
 
 	// Call handler
@@ -765,7 +766,7 @@ func TestDeleteISOWithChecksumFile(t *testing.T) {
 	}
 }
 
-// TestDeleteISOWithMultipleChecksumTypes tests cleanup of different checksum types
+// TestDeleteISOWithMultipleChecksumTypes tests cleanup of different checksum types.
 func TestDeleteISOWithMultipleChecksumTypes(t *testing.T) {
 	handlers, database, _, isoDir, cleanup := setupTestHandlers(t)
 	defer cleanup()
@@ -786,21 +787,21 @@ func TestDeleteISOWithMultipleChecksumTypes(t *testing.T) {
 
 	// Create test file
 	filePath := filepath.Join(isoDir, iso.FilePath)
-	os.MkdirAll(filepath.Dir(filePath), 0755)
-	os.WriteFile(filePath, []byte("test content"), 0644)
+	os.MkdirAll(filepath.Dir(filePath), 0o755)
+	os.WriteFile(filePath, []byte("test content"), 0o644)
 
 	// Create multiple checksum files
 	sha256Path := filePath + ".sha256"
 	sha512Path := filePath + ".sha512"
 	md5Path := filePath + ".md5"
-	os.WriteFile(sha256Path, []byte("sha256sum"), 0644)
-	os.WriteFile(sha512Path, []byte("sha512sum"), 0644)
-	os.WriteFile(md5Path, []byte("md5sum"), 0644)
+	os.WriteFile(sha256Path, []byte("sha256sum"), 0o644)
+	os.WriteFile(sha512Path, []byte("sha512sum"), 0o644)
+	os.WriteFile(md5Path, []byte("md5sum"), 0o644)
 
 	// Delete ISO
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
-	c.Request, _ = http.NewRequest("DELETE", fmt.Sprintf("/api/isos/%s", iso.ID), nil)
+	c.Request, _ = http.NewRequest("DELETE", fmt.Sprintf("/api/isos/%s", iso.ID), http.NoBody)
 	c.Params = gin.Params{{Key: "id", Value: iso.ID}}
 	handlers.DeleteISO(c)
 

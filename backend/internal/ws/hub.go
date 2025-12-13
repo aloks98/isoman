@@ -2,30 +2,31 @@ package ws
 
 import (
 	"encoding/json"
-	"linux-iso-manager/internal/models"
 	"log/slog"
+
+	"linux-iso-manager/internal/models"
 )
 
-// Message types for WebSocket communication
+// Message types for WebSocket communication.
 const (
 	MessageTypeProgress = "progress"
 	MessageTypeStatus   = "status"
 )
 
-// Message represents a WebSocket message
+// Message represents a WebSocket message.
 type Message struct {
-	Type    string      `json:"type"`
 	Payload interface{} `json:"payload"`
+	Type    string      `json:"type"`
 }
 
-// ProgressPayload represents a progress update message
+// ProgressPayload represents a progress update message.
 type ProgressPayload struct {
-	ID       string            `json:"id"`
-	Progress int               `json:"progress"`
-	Status   models.ISOStatus  `json:"status"`
+	ID       string           `json:"id"`
+	Status   models.ISOStatus `json:"status"`
+	Progress int              `json:"progress"`
 }
 
-// Hub maintains the set of active clients and broadcasts messages to them
+// Hub maintains the set of active clients and broadcasts messages to them.
 type Hub struct {
 	// Registered clients
 	clients map[*Client]bool
@@ -40,7 +41,7 @@ type Hub struct {
 	unregister chan *Client
 }
 
-// NewHub creates a new Hub instance
+// NewHub creates a new Hub instance.
 func NewHub() *Hub {
 	return &Hub{
 		broadcast:  make(chan []byte, 256),
@@ -50,7 +51,7 @@ func NewHub() *Hub {
 	}
 }
 
-// Run starts the hub's main loop
+// Run starts the hub's main loop.
 func (h *Hub) Run() {
 	for {
 		select {
@@ -80,7 +81,7 @@ func (h *Hub) Run() {
 	}
 }
 
-// BroadcastProgress sends a progress update to all connected clients
+// BroadcastProgress sends a progress update to all connected clients.
 func (h *Hub) BroadcastProgress(isoID string, progress int, status models.ISOStatus) {
 	payload := ProgressPayload{
 		ID:       isoID,
@@ -110,7 +111,7 @@ func (h *Hub) BroadcastProgress(isoID string, progress int, status models.ISOSta
 	}
 }
 
-// ClientCount returns the number of connected clients
+// ClientCount returns the number of connected clients.
 func (h *Hub) ClientCount() int {
 	return len(h.clients)
 }

@@ -1,17 +1,18 @@
 package db
 
 import (
-	"linux-iso-manager/internal/config"
-	"linux-iso-manager/internal/models"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
+	"linux-iso-manager/internal/config"
+	"linux-iso-manager/internal/models"
+
 	"github.com/google/uuid"
 )
 
-// setupTestDB creates a temporary test database
+// setupTestDB creates a temporary test database.
 func setupTestDB(t *testing.T) (*DB, func()) {
 	t.Helper()
 
@@ -34,7 +35,7 @@ func setupTestDB(t *testing.T) (*DB, func()) {
 	return db, cleanup
 }
 
-// createTestISO creates a test ISO for use in tests
+// createTestISO creates a test ISO for use in tests.
 func createTestISO() *models.ISO {
 	return &models.ISO{
 		ID:           uuid.New().String(),
@@ -405,7 +406,6 @@ func TestDeleteNonExistentISO(t *testing.T) {
 	}
 }
 
-
 func TestDuplicateCompositeKeyRejected(t *testing.T) {
 	db, cleanup := setupTestDB(t)
 	defer cleanup()
@@ -425,11 +425,11 @@ func TestDuplicateCompositeKeyRejected(t *testing.T) {
 
 	// Try to create second ISO with same composite key
 	iso2 := createTestISO()
-	iso2.Name = "alpine"       // Same
-	iso2.Version = "3.19.1"    // Same
-	iso2.Arch = "x86_64"       // Same
-	iso2.Edition = ""          // Same
-	iso2.FileType = "iso"      // Same
+	iso2.Name = "alpine"                                   // Same
+	iso2.Version = "3.19.1"                                // Same
+	iso2.Arch = "x86_64"                                   // Same
+	iso2.Edition = ""                                      // Same
+	iso2.FileType = "iso"                                  // Same
 	iso2.DownloadURL = "http://different-url.com/file.iso" // Different URL
 
 	err = db.CreateISO(iso2)

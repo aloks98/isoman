@@ -8,9 +8,9 @@ import (
 	"os"
 )
 
-// FetchContent fetches content from a URL and returns it as a reader
+// FetchContent fetches content from a URL and returns it as a reader.
 func FetchContent(ctx context.Context, url string) (io.ReadCloser, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, http.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
@@ -28,7 +28,7 @@ func FetchContent(ctx context.Context, url string) (io.ReadCloser, error) {
 	return resp.Body, nil
 }
 
-// FetchBytes fetches content from a URL and returns it as bytes
+// FetchBytes fetches content from a URL and returns it as bytes.
 func FetchBytes(ctx context.Context, url string) ([]byte, error) {
 	body, err := FetchContent(ctx, url)
 	if err != nil {
@@ -44,10 +44,10 @@ func FetchBytes(ctx context.Context, url string) ([]byte, error) {
 	return data, nil
 }
 
-// DownloadFile downloads a file from a URL to a destination path
+// DownloadFile downloads a file from a URL to a destination path.
 func DownloadFile(ctx context.Context, url, destPath string) error {
 	// Create request
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, http.NoBody)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
@@ -79,14 +79,13 @@ func DownloadFile(ctx context.Context, url, destPath string) error {
 	return nil
 }
 
-// DownloadWithProgress downloads a file with progress callback
-// The progress callback is called with (bytesDownloaded, totalBytes)
+// The progress callback is called with (bytesDownloaded, totalBytes).
 type ProgressCallback func(downloaded, total int64)
 
-// DownloadFileWithProgress downloads a file and reports progress
+// DownloadFileWithProgress downloads a file and reports progress.
 func DownloadFileWithProgress(ctx context.Context, url, destPath string, bufferSize int, onProgress ProgressCallback) error {
 	// Create request
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, http.NoBody)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}

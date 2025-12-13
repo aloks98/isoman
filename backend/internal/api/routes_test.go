@@ -1,15 +1,16 @@
 package api
 
 import (
-	"linux-iso-manager/internal/download"
-	"linux-iso-manager/internal/service"
-	"linux-iso-manager/internal/testutil"
-	"linux-iso-manager/internal/ws"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"linux-iso-manager/internal/download"
+	"linux-iso-manager/internal/service"
+	"linux-iso-manager/internal/testutil"
+	"linux-iso-manager/internal/ws"
 )
 
 func TestSetupRoutes(t *testing.T) {
@@ -86,7 +87,7 @@ func TestAPIRoutes(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := httptest.NewRequest(tt.method, tt.path, nil)
+			req := httptest.NewRequest(tt.method, tt.path, http.NoBody)
 			w := httptest.NewRecorder()
 
 			router.ServeHTTP(w, req)
@@ -109,7 +110,7 @@ func TestAPIRouteNotFound(t *testing.T) {
 	wsHub := ws.NewHub()
 	router := SetupRoutes(isoService, env.ISODir, wsHub, env.Config)
 
-	req := httptest.NewRequest(http.MethodGet, "/api/nonexistent", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/nonexistent", http.NoBody)
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -136,7 +137,7 @@ func TestCORSConfiguration(t *testing.T) {
 	router := SetupRoutes(isoService, env.ISODir, wsHub, env.Config)
 
 	// Test CORS preflight request
-	req := httptest.NewRequest(http.MethodOptions, "/api/isos", nil)
+	req := httptest.NewRequest(http.MethodOptions, "/api/isos", http.NoBody)
 	req.Header.Set("Origin", "http://localhost:3000")
 	req.Header.Set("Access-Control-Request-Method", "GET")
 
@@ -159,11 +160,11 @@ func TestNoRouteHandler(t *testing.T) {
 
 	// Create frontend directory and index.html
 	frontendPath := "./ui/dist"
-	os.MkdirAll(frontendPath, 0755)
+	os.MkdirAll(frontendPath, 0o755)
 	defer os.RemoveAll("./ui")
 
 	indexContent := "<html><body>Test SPA</body></html>"
-	err := os.WriteFile(filepath.Join(frontendPath, "index.html"), []byte(indexContent), 0644)
+	err := os.WriteFile(filepath.Join(frontendPath, "index.html"), []byte(indexContent), 0o644)
 	if err != nil {
 		t.Fatalf("Failed to create test index.html: %v", err)
 	}
@@ -221,7 +222,7 @@ func TestNoRouteHandler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodGet, tt.path, nil)
+			req := httptest.NewRequest(http.MethodGet, tt.path, http.NoBody)
 			w := httptest.NewRecorder()
 
 			router.ServeHTTP(w, req)
@@ -250,7 +251,7 @@ func TestHealthEndpoint(t *testing.T) {
 	wsHub := ws.NewHub()
 	router := SetupRoutes(isoService, env.ISODir, wsHub, env.Config)
 
-	req := httptest.NewRequest(http.MethodGet, "/health", nil)
+	req := httptest.NewRequest(http.MethodGet, "/health", http.NoBody)
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
@@ -283,7 +284,7 @@ func TestImagesRoute(t *testing.T) {
 	router := SetupRoutes(isoService, env.ISODir, wsHub, env.Config)
 
 	// Test directory listing
-	req := httptest.NewRequest(http.MethodGet, "/images/", nil)
+	req := httptest.NewRequest(http.MethodGet, "/images/", http.NoBody)
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)

@@ -13,7 +13,7 @@ func TestComputeHash(t *testing.T) {
 	testFile := filepath.Join(tmpDir, "test.txt")
 	testContent := "Hello, World!"
 
-	err := os.WriteFile(testFile, []byte(testContent), 0644)
+	err := os.WriteFile(testFile, []byte(testContent), 0o644)
 	if err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
@@ -56,7 +56,7 @@ func TestComputeHash(t *testing.T) {
 func TestComputeHashUnsupportedType(t *testing.T) {
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "test.txt")
-	err := os.WriteFile(testFile, []byte("test"), 0644)
+	err := os.WriteFile(testFile, []byte("test"), 0o644)
 	if err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
@@ -91,8 +91,8 @@ abc123def456  other.iso`,
 			wantErr:  false,
 		},
 		{
-			name: "Binary mode indicator with asterisk",
-			content: `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 *test.iso`,
+			name:     "Binary mode indicator with asterisk",
+			content:  `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 *test.iso`,
 			filename: "test.iso",
 			want:     "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
 			wantErr:  false,
@@ -142,8 +142,8 @@ e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  test.iso
 			wantErr:  false,
 		},
 		{
-			name: "Uppercase hash normalized to lowercase",
-			content: `E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855  test.iso`,
+			name:     "Uppercase hash normalized to lowercase",
+			content:  `E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855  test.iso`,
 			filename: "test.iso",
 			want:     "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
 			wantErr:  false,

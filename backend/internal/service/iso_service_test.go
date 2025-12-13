@@ -1,9 +1,10 @@
 package service
 
 import (
-	"linux-iso-manager/internal/models"
 	"strings"
 	"testing"
+
+	"linux-iso-manager/internal/models"
 )
 
 func TestNormalizeName(t *testing.T) {
@@ -318,10 +319,10 @@ func TestGenerateDownloadLink(t *testing.T) {
 
 func TestComputeFields(t *testing.T) {
 	tests := []struct {
-		name            string
-		iso             *models.ISO
-		wantName        string
-		wantFilename    string
+		name             string
+		iso              *models.ISO
+		wantName         string
+		wantFilename     string
 		wantDownloadLink string
 	}{
 		{
@@ -333,8 +334,8 @@ func TestComputeFields(t *testing.T) {
 				Edition:  "standard",
 				FileType: "iso",
 			},
-			wantName:        "alpine-linux",
-			wantFilename:    "alpine-linux-3.19.1-standard-x86_64.iso",
+			wantName:         "alpine-linux",
+			wantFilename:     "alpine-linux-3.19.1-standard-x86_64.iso",
 			wantDownloadLink: "/images/alpine-linux/3.19.1/x86_64/alpine-linux-3.19.1-standard-x86_64.iso",
 		},
 		{
@@ -346,8 +347,8 @@ func TestComputeFields(t *testing.T) {
 				Edition:  "",
 				FileType: "iso",
 			},
-			wantName:        "ubuntu",
-			wantFilename:    "ubuntu-24.04-amd64.iso",
+			wantName:         "ubuntu",
+			wantFilename:     "ubuntu-24.04-amd64.iso",
 			wantDownloadLink: "/images/ubuntu/24.04/amd64/ubuntu-24.04-amd64.iso",
 		},
 		{
@@ -359,8 +360,8 @@ func TestComputeFields(t *testing.T) {
 				Edition:  "",
 				FileType: "iso",
 			},
-			wantName:        "alpinelinux2024",
-			wantFilename:    "alpinelinux2024-3.19-x86_64.iso",
+			wantName:         "alpinelinux2024",
+			wantFilename:     "alpinelinux2024-3.19-x86_64.iso",
 			wantDownloadLink: "/images/alpinelinux2024/3.19/x86_64/alpinelinux2024-3.19-x86_64.iso",
 		},
 	}

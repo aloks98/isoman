@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// New creates a new structured logger based on configuration
+// New creates a new structured logger based on configuration.
 func New(level, format string) *slog.Logger {
 	// Parse log level
 	var logLevel slog.Level
@@ -30,7 +30,7 @@ func New(level, format string) *slog.Logger {
 
 	// Create handler based on format
 	var handler slog.Handler
-	if strings.ToLower(format) == "json" {
+	if strings.EqualFold(format, "json") {
 		handler = slog.NewJSONHandler(os.Stdout, opts)
 	} else {
 		handler = slog.NewTextHandler(os.Stdout, opts)

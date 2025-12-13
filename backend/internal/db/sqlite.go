@@ -3,10 +3,11 @@ package db
 import (
 	"database/sql"
 	"fmt"
-	"linux-iso-manager/internal/config"
-	"linux-iso-manager/internal/models"
 	"log/slog"
 	"os"
+
+	"linux-iso-manager/internal/config"
+	"linux-iso-manager/internal/models"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/sqlite"
@@ -14,7 +15,7 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-// SQL constants for ISO queries
+// SQL constants for ISO queries.
 const (
 	isoSelectFields = `id, name, version, arch, edition, file_type, filename, file_path, download_link,
 		size_bytes, checksum, checksum_type, download_url, checksum_url,
@@ -31,18 +32,18 @@ const (
 		error_message = ?, completed_at = ?`
 )
 
-// DB wraps the SQLite database connection
+// DB wraps the SQLite database connection.
 type DB struct {
 	conn *sql.DB
 	cfg  *config.DatabaseConfig
 }
 
-// scanISO scans a single ISO from a sql.Row or sql.Rows
+// scanISO scans a single ISO from a sql.Row or sql.Rows.
 type scanner interface {
 	Scan(dest ...interface{}) error
 }
 
-// scanISO scans an ISO from a database row
+// scanISO scans an ISO from a database row.
 func scanISO(s scanner) (*models.ISO, error) {
 	iso := &models.ISO{}
 	err := s.Scan(
@@ -72,7 +73,7 @@ func scanISO(s scanner) (*models.ISO, error) {
 	return iso, nil
 }
 
-// New creates a new database connection and runs migrations
+// New creates a new database connection and runs migrations.
 func New(dbPath string, cfg *config.DatabaseConfig) (*DB, error) {
 	conn, err := sql.Open("sqlite", dbPath)
 	if err != nil {
@@ -111,12 +112,12 @@ func New(dbPath string, cfg *config.DatabaseConfig) (*DB, error) {
 	return db, nil
 }
 
-// Close closes the database connection
+// Close closes the database connection.
 func (db *DB) Close() error {
 	return db.conn.Close()
 }
 
-// migrate runs database migrations using golang-migrate
+// migrate runs database migrations using golang-migrate.
 func (db *DB) migrate() error {
 	// Create a driver instance for golang-migrate
 	driver, err := sqlite.WithInstance(db.conn, &sqlite.Config{})
@@ -145,8 +146,7 @@ func (db *DB) migrate() error {
 	return nil
 }
 
-// findMigrationsPath finds the migrations directory
-// Checks multiple paths to work in both production and test environments
+// Checks multiple paths to work in both production and test environments.
 func findMigrationsPath() string {
 	paths := []string{
 		"./migrations",        // Production: binary in project root
@@ -164,7 +164,7 @@ func findMigrationsPath() string {
 	return "./migrations"
 }
 
-// CreateISO inserts a new ISO record into the database
+// CreateISO inserts a new ISO record into the database.
 func (db *DB) CreateISO(iso *models.ISO) error {
 	query := `
 	INSERT INTO isos (
@@ -201,7 +201,7 @@ func (db *DB) CreateISO(iso *models.ISO) error {
 	return nil
 }
 
-// GetISO retrieves a single ISO by ID
+// GetISO retrieves a single ISO by ID.
 func (db *DB) GetISO(id string) (*models.ISO, error) {
 	query := fmt.Sprintf("SELECT %s FROM isos WHERE id = ?", isoSelectFields)
 	row := db.conn.QueryRow(query, id)
@@ -216,7 +216,7 @@ func (db *DB) GetISO(id string) (*models.ISO, error) {
 	return iso, nil
 }
 
-// ListISOs retrieves all ISOs ordered by created_at DESC
+// ListISOs retrieves all ISOs ordered by created_at DESC.
 func (db *DB) ListISOs() ([]models.ISO, error) {
 	query := fmt.Sprintf("SELECT %s FROM isos ORDER BY created_at DESC", isoSelectFields)
 	rows, err := db.conn.Query(query)
@@ -243,7 +243,7 @@ func (db *DB) ListISOs() ([]models.ISO, error) {
 	return isos, nil
 }
 
-// UpdateISO updates an existing ISO record
+// UpdateISO updates an existing ISO record.
 func (db *DB) UpdateISO(iso *models.ISO) error {
 	query := `
 	UPDATE isos SET
@@ -281,7 +281,7 @@ func (db *DB) UpdateISO(iso *models.ISO) error {
 	return nil
 }
 
-// UpdateISOStatus updates the status and error message of an ISO
+// UpdateISOStatus updates the status and error message of an ISO.
 func (db *DB) UpdateISOStatus(id string, status models.ISOStatus, errorMsg string) error {
 	query := `UPDATE isos SET status = ?, error_message = ? WHERE id = ?`
 	if _, err := db.conn.Exec(query, status, errorMsg, id); err != nil {
@@ -290,7 +290,7 @@ func (db *DB) UpdateISOStatus(id string, status models.ISOStatus, errorMsg strin
 	return nil
 }
 
-// UpdateISOProgress updates the progress of an ISO
+// UpdateISOProgress updates the progress of an ISO.
 func (db *DB) UpdateISOProgress(id string, progress int) error {
 	query := `UPDATE isos SET progress = ? WHERE id = ?`
 	if _, err := db.conn.Exec(query, progress, id); err != nil {
@@ -299,7 +299,7 @@ func (db *DB) UpdateISOProgress(id string, progress int) error {
 	return nil
 }
 
-// UpdateISOSize updates the size of an ISO
+// UpdateISOSize updates the size of an ISO.
 func (db *DB) UpdateISOSize(id string, sizeBytes int64) error {
 	query := `UPDATE isos SET size_bytes = ? WHERE id = ?`
 	if _, err := db.conn.Exec(query, sizeBytes, id); err != nil {
@@ -308,7 +308,7 @@ func (db *DB) UpdateISOSize(id string, sizeBytes int64) error {
 	return nil
 }
 
-// UpdateISOChecksum updates the checksum of an ISO
+// UpdateISOChecksum updates the checksum of an ISO.
 func (db *DB) UpdateISOChecksum(id string, checksum string) error {
 	query := `UPDATE isos SET checksum = ? WHERE id = ?`
 	if _, err := db.conn.Exec(query, checksum, id); err != nil {
@@ -317,7 +317,7 @@ func (db *DB) UpdateISOChecksum(id string, checksum string) error {
 	return nil
 }
 
-// DeleteISO deletes an ISO record from the database
+// DeleteISO deletes an ISO record from the database.
 func (db *DB) DeleteISO(id string) error {
 	query := `DELETE FROM isos WHERE id = ?`
 	if _, err := db.conn.Exec(query, id); err != nil {
@@ -326,7 +326,7 @@ func (db *DB) DeleteISO(id string) error {
 	return nil
 }
 
-// ISOExists checks if an ISO with the given combination already exists
+// ISOExists checks if an ISO with the given combination already exists.
 func (db *DB) ISOExists(name, version, arch, edition, fileType string) (bool, error) {
 	query := `SELECT COUNT(*) FROM isos WHERE name = ? AND version = ? AND arch = ? AND edition = ? AND file_type = ?`
 	var count int
@@ -337,7 +337,7 @@ func (db *DB) ISOExists(name, version, arch, edition, fileType string) (bool, er
 	return count > 0, nil
 }
 
-// GetISOByComposite retrieves an ISO by its composite key
+// GetISOByComposite retrieves an ISO by its composite key.
 func (db *DB) GetISOByComposite(name, version, arch, edition, fileType string) (*models.ISO, error) {
 	query := fmt.Sprintf("SELECT %s FROM isos WHERE name = ? AND version = ? AND arch = ? AND edition = ? AND file_type = ?", isoSelectFields)
 	row := db.conn.QueryRow(query, name, version, arch, edition, fileType)
