@@ -419,18 +419,3 @@ func TestDirectoryHandlerDirectorySizeDisplay(t *testing.T) {
 		t.Error("HTML should show '7 B' for file size")
 	}
 }
-
-// Helper function for min/max.
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}

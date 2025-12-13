@@ -75,7 +75,7 @@ func NewMockDownloadServer(t *testing.T, fileSize int, statusCode int) *httptest
 		for i := range content {
 			content[i] = byte('A' + (i % 26))
 		}
-		w.Write(content)
+		_, _ = w.Write(content) //nolint:errcheck // Test utility, errors will cause test failures anyway
 	}))
 }
 

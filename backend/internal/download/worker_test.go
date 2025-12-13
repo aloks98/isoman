@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -516,13 +515,4 @@ func TestWorkerTempFileCleanup(t *testing.T) {
 	if _, err := os.Stat(tmpFile); !os.IsNotExist(err) {
 		t.Errorf("Temp file should be cleaned up: %s", tmpFile)
 	}
-}
-
-// Helper to create a test HTTP server that serves content.
-func createTestServer(content []byte) *httptest.Server {
-	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(content)))
-		w.WriteHeader(http.StatusOK)
-		io.WriteString(w, string(content))
-	}))
 }

@@ -64,7 +64,10 @@ func (s *ISOService) CreateISO(req CreateISORequest) (*models.ISO, error) {
 	}
 
 	if exists {
-		existingISO, _ := s.db.GetISOByComposite(normalizedName, req.Version, req.Arch, req.Edition, fileType)
+		existingISO, err := s.db.GetISOByComposite(normalizedName, req.Version, req.Arch, req.Edition, fileType)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get existing ISO: %w", err)
+		}
 		return nil, &ISOAlreadyExistsError{ExistingISO: existingISO}
 	}
 

@@ -51,7 +51,9 @@ The workflow intelligently runs jobs based on which files changed:
 
 **Features:**
 - ⚡ **Fast PR checks**: Only runs relevant jobs
-- 🔄 Caching of Go modules and build artifacts
+- 🔄 **Dependency caching**:
+  - Go modules (`~/go/pkg/mod`) and build artifacts (`~/.cache/go-build`)
+  - Bun dependencies (`~/.bun/install/cache` and `ui/node_modules`)
 - 🚀 Parallel execution of independent jobs
 - 🐳 Docker layer caching for faster builds
 - 🔍 Always runs full suite on master branch
@@ -116,6 +118,7 @@ The workflow intelligently runs jobs based on which files changed:
 - 🔒 **Protected by tests**: Docker push only happens if all tests pass
 - 🎯 **Build from tag**: Ensures Docker image is built from tagged commit
 - 📦 **Dual tagging**: Pushes both version-specific and `latest` tags
+- 🔄 **Dependency caching**: Go and Bun dependencies cached for faster builds
 - 📝 **Auto-generated release notes**: GitHub automatically generates release notes from commits since last release
 - 🐳 **Complete installation guide**: Includes Docker and Docker Compose installation instructions
 

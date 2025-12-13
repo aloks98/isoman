@@ -105,7 +105,8 @@ When you run `git commit`, the hook will **CHECK ONLY** (not auto-fix):
 
 1. **Backend (.go files)**:
    - Run `gofumpt` to check formatting
-   - **Fails if code is not formatted**
+   - Run `golangci-lint` to check code quality
+   - **Fails if code is not formatted OR has linting errors**
 
 2. **Frontend (.ts, .tsx, .js, .jsx, .json, .css files)**:
    - Run Biome CI check (formatter + linter)
@@ -114,16 +115,20 @@ When you run `git commit`, the hook will **CHECK ONLY** (not auto-fix):
 
 ### If the commit fails:
 
-1. **Format your code manually**:
+1. **Format and fix linting errors**:
    ```bash
-   # Backend
+   # Backend - Format code
    cd backend && make fmt
 
-   # Frontend
+   # Backend - Check for lint errors
+   cd backend && make lint
+   # (Fix any lint errors manually)
+
+   # Frontend - Auto-fix formatting and linting
    cd ui && bun run check
    ```
 
-2. **Stage the formatted files**:
+2. **Stage the fixed files**:
    ```bash
    git add .
    ```
@@ -134,9 +139,10 @@ When you run `git commit`, the hook will **CHECK ONLY** (not auto-fix):
    ```
 
 This ensures:
-- Developers are aware of formatting issues before committing
+- Developers are aware of formatting AND linting issues before committing
 - CI validation is consistent with local pre-commit checks
 - No surprise auto-formatting in commits
+- Code quality is maintained from the first commit
 
 ## CI/CD Integration
 

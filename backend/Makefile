@@ -18,7 +18,7 @@ install-tools: ## Install development tools (golangci-lint, gofumpt)
 	@go install mvdan.cc/gofumpt@latest
 	@echo "Tools installed successfully!"
 
-lint: ## Run golangci-lint
+lint: ## Run golangci-lint for linting and static analysis
 	@echo "Running golangci-lint..."
 	@$(GOLANGCI_LINT) run ./...
 
@@ -26,7 +26,7 @@ fmt: ## Format code with gofumpt
 	@echo "Formatting code with gofumpt..."
 	@$(GOFUMPT) -l -w .
 
-fmt-check: ## Check if code is formatted
+fmt-check: ## Check if code is formatted with gofumpt
 	@echo "Checking code formatting..."
 	@$(GOFUMPT) -l . | grep . && echo "Code is not formatted. Run 'make fmt' to fix." && exit 1 || echo "Code is formatted correctly."
 

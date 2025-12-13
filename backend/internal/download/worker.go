@@ -145,7 +145,9 @@ func (w *Worker) download(ctx context.Context, iso *models.ISO, destPath string)
 	err := httputil.DownloadFileWithProgress(ctx, iso.DownloadURL, destPath, 32*1024, func(downloaded, total int64) {
 		// Update database with total size on first callback
 		if iso.SizeBytes == 0 && total > 0 {
-			w.db.UpdateISOSize(iso.ID, total)
+			if err := w.db.UpdateISOSize(iso.ID, total); err != nil {
+				slog.Warn("failed to update ISO size", slog.Any("error", err))
+			}
 			iso.SizeBytes = total
 		}
 
@@ -192,7 +194,9 @@ func (w *Worker) verifyChecksum(iso *models.ISO, filepath string) error {
 	}
 
 	// Update database with verified checksum
-	w.db.UpdateISOChecksum(iso.ID, actualChecksum)
+	if err := w.db.UpdateISOChecksum(iso.ID, actualChecksum); err != nil {
+		slog.Warn("failed to update ISO checksum", slog.Any("error", err))
+	}
 	iso.Checksum = actualChecksum
 
 	return nil
@@ -200,9 +204,13 @@ func (w *Worker) verifyChecksum(iso *models.ISO, filepath string) error {
 
 // updateStatus updates the ISO status and triggers progress callback.
 func (w *Worker) updateStatus(isoID string, status models.ISOStatus, progress int, errorMsg string) {
-	w.db.UpdateISOStatus(isoID, status, errorMsg)
+	if err := w.db.UpdateISOStatus(isoID, status, errorMsg); err != nil {
+		slog.Warn("failed to update ISO status", slog.Any("error", err))
+	}
 	if progress >= 0 {
-		w.db.UpdateISOProgress(isoID, progress)
+		if err := w.db.UpdateISOProgress(isoID, progress); err != nil {
+			slog.Warn("failed to update ISO progress", slog.Any("error", err))
+		}
 	}
 
 	if w.progressCallback != nil {

@@ -20,16 +20,6 @@ const (
 	isoSelectFields = `id, name, version, arch, edition, file_type, filename, file_path, download_link,
 		size_bytes, checksum, checksum_type, download_url, checksum_url,
 		status, progress, error_message, created_at, completed_at`
-
-	isoInsertFields = `id, name, version, arch, edition, file_type, filename, file_path, download_link,
-		size_bytes, checksum, checksum_type, download_url, checksum_url,
-		status, progress, error_message, created_at, completed_at`
-
-	isoUpdateFields = `name = ?, version = ?, arch = ?, edition = ?, file_type = ?,
-		filename = ?, file_path = ?, download_link = ?,
-		size_bytes = ?, checksum = ?, checksum_type = ?,
-		download_url = ?, checksum_url = ?, status = ?, progress = ?,
-		error_message = ?, completed_at = ?`
 )
 
 // DB wraps the SQLite database connection.
@@ -219,7 +209,7 @@ func (db *DB) GetISO(id string) (*models.ISO, error) {
 // ListISOs retrieves all ISOs ordered by created_at DESC.
 func (db *DB) ListISOs() ([]models.ISO, error) {
 	query := fmt.Sprintf("SELECT %s FROM isos ORDER BY created_at DESC", isoSelectFields)
-	rows, err := db.conn.Query(query)
+	rows, err := db.conn.Query(query) //nolint:sqlclosecheck // False positive: rows are closed via deferred closure below
 	if err != nil {
 		return nil, fmt.Errorf("failed to query ISO list: %w", err)
 	}

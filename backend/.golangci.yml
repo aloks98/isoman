@@ -6,8 +6,10 @@ run:
 
 linters:
   disable:
-    - exportloopref  # Deprecated since Go 1.22
     - tenv           # Deprecated, replaced by usetesting
+    - gofumpt        # Use standalone gofumpt to avoid version conflicts
+    - gofmt          # Use standalone gofumpt to avoid version conflicts
+    - usetesting     # Best practice suggestion, not critical
 
   enable:
     # Critical linters
@@ -19,8 +21,6 @@ linters:
     - unused        # Check for unused code
 
     # Code quality
-    - gofmt         # Check formatting
-    - gofumpt       # Stricter gofmt
     - goimports     # Check imports formatting
     - misspell      # Find commonly misspelled words
     - unconvert     # Unnecessary type conversions
@@ -32,7 +32,6 @@ linters:
     - typecheck     # Type check
     - whitespace    # Detect leading/trailing whitespace
     - copyloopvar   # Replace exportloopref
-    - usetesting    # Replace tenv
 
 linters-settings:
   errcheck:

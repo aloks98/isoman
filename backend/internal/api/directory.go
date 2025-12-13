@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"io/fs"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -153,7 +154,10 @@ func renderDirectoryListing(c *gin.Context, path string, files []FileInfo) {
 	}
 
 	c.Header("Content-Type", "text/html; charset=utf-8")
-	tmpl.Execute(c.Writer, data)
+	if err := tmpl.Execute(c.Writer, data); err != nil {
+		slog.Error("failed to execute template", slog.Any("error", err))
+		ErrorResponse(c, http.StatusInternalServerError, ErrCodeInternalError, "Failed to generate directory listing")
+	}
 }
 
 // WalkDirectory recursively walks a directory and returns all files.
