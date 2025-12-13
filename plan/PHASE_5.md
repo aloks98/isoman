@@ -39,7 +39,7 @@ interface WSMessage {
 
 ### 5.3 API Client (`src/api/isos.ts`)
 
-Base URL from env: `VITE_API_URL` (default: http://localhost:8080)
+Base URL from env: `PUBLIC_API_URL` (default: http://localhost:8080)
 
 **Functions:**
 - `list()` → ISO[]
@@ -61,7 +61,7 @@ Base URL from env: `VITE_API_URL` (default: http://localhost:8080)
 
 ### 5.5 WebSocket Hook (`src/hooks/useWebSocket.ts`)
 
-- Connect to `VITE_WS_URL` (default: ws://localhost:8080/ws)
+- Connect to `PUBLIC_WS_URL` (default: ws://localhost:8080/ws)
 - Auto-reconnect on disconnect (3s delay)
 - Parse incoming messages
 - Call store.updateProgress on progress messages

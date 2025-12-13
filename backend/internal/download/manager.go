@@ -20,19 +20,23 @@ type Manager struct {
 	cancel           context.CancelFunc
 	wg               sync.WaitGroup
 	stopOnce         sync.Once
+	// Track active downloads with their cancel functions
+	activeDownloads map[string]context.CancelFunc
+	mu              sync.RWMutex
 }
 
 // NewManager creates a new download manager
 func NewManager(database *db.DB, isoDir string, workerCount int) *Manager {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &Manager{
-		db:          database,
-		isoDir:      isoDir,
-		queue:       make(chan *models.ISO, 100),
-		workerCount: workerCount,
-		shutdown:    make(chan struct{}),
-		ctx:         ctx,
-		cancel:      cancel,
+		db:              database,
+		isoDir:          isoDir,
+		queue:           make(chan *models.ISO, 100),
+		workerCount:     workerCount,
+		shutdown:        make(chan struct{}),
+		ctx:             ctx,
+		cancel:          cancel,
+		activeDownloads: make(map[string]context.CancelFunc),
 	}
 }
 
@@ -81,7 +85,23 @@ func (m *Manager) worker(id int) {
 		case iso := <-m.queue:
 			log.Printf("Worker %d: Starting download of %s (ID: %s)", id, iso.Name, iso.ID)
 
-			err := worker.Process(m.ctx, iso)
+			// Create a child context that can be cancelled independently
+			downloadCtx, cancelDownload := context.WithCancel(m.ctx)
+
+			// Register the cancel function
+			m.mu.Lock()
+			m.activeDownloads[iso.ID] = cancelDownload
+			m.mu.Unlock()
+
+			// Process the download
+			err := worker.Process(downloadCtx, iso)
+
+			// Clean up the cancel function
+			m.mu.Lock()
+			delete(m.activeDownloads, iso.ID)
+			m.mu.Unlock()
+			cancelDownload() // Clean up context resources
+
 			if err != nil {
 				log.Printf("Worker %d: Failed to download %s: %v", id, iso.Name, err)
 			} else {

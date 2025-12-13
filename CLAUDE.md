@@ -96,8 +96,8 @@ bun run lint                       # Run ESLint
 - `/ws` → `ws://localhost:8080` (WebSocket)
 
 **Environment Variables:**
-- `VITE_API_URL` (default: http://localhost:8080)
-- `VITE_WS_URL` (default: ws://localhost:8080/ws)
+- `PUBLIC_API_URL` (default: http://localhost:8080)
+- `PUBLIC_WS_URL` (default: ws://localhost:8080/ws)
 
 ### Docker
 

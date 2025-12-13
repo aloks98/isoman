@@ -147,6 +147,14 @@ func (h *Handlers) DeleteISO(c *gin.Context) {
 		return
 	}
 
+	// Cancel ongoing download if the ISO is being downloaded
+	if iso.Status == models.StatusDownloading || iso.Status == models.StatusVerifying {
+		if h.manager.CancelDownload(id) {
+			// Wait a moment for the download to be cancelled and cleaned up
+			time.Sleep(100 * time.Millisecond)
+		}
+	}
+
 	// Delete file if it exists
 	filePath := filepath.Join(h.isoDir, iso.FilePath)
 	if _, err := os.Stat(filePath); err == nil {
