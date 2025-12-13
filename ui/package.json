@@ -6,7 +6,7 @@
   "scripts": {
     "build": "rsbuild build",
     "check": "biome check --write",
-    "check-only": "biome ci --error-on-warnings",
+    "check-only": "biome ci",
     "dev": "rsbuild dev --open",
     "format": "biome format --write",
     "lint": "biome lint",

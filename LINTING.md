@@ -108,8 +108,9 @@ When you run `git commit`, the hook will **CHECK ONLY** (not auto-fix):
    - **Fails if code is not formatted**
 
 2. **Frontend (.ts, .tsx, .js, .jsx, .json, .css files)**:
-   - Run Biome check (lint + format check)
-   - **Fails if code has linting or formatting issues**
+   - Run Biome CI check (formatter + linter)
+   - **Fails if code has formatting issues or linting errors**
+   - **Warnings are shown but don't fail the commit**
 
 ### If the commit fails:
 
