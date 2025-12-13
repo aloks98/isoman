@@ -1,0 +1,47 @@
+services:
+  isoman:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: isoman:latest
+    container_name: isoman
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      # Persist data (database and ISOs)
+      - isoman-data:/data
+      # Optional: Mount ISOs directory to host for easy access
+      # - ./data/isos:/data/isos
+    environment:
+      # Server configuration
+      - PORT=8080
+      - DATA_DIR=/data
+      - WORKER_COUNT=2
+      - GIN_MODE=release
+      # Optional: Timezone
+      - TZ=UTC
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 3s
+      start_period: 5s
+      retries: 3
+    # Resource limits (optional, adjust based on your needs)
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+volumes:
+  isoman-data:
+    driver: local
+    # Optional: Specify a custom location
+    # driver_opts:
+    #   type: none
+    #   device: /path/on/host
+    #   o: bind

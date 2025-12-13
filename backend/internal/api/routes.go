@@ -53,19 +53,32 @@ func SetupRoutes(database *db.DB, manager *download.Manager, isoDir string, wsHu
 	// This handles both /images/ (directory listing) and /images/* (file downloads)
 	router.GET("/images/*filepath", DirectoryHandler(isoDir))
 
-	// Serve frontend (will be implemented in Phase 5/6)
-	// For now, just a placeholder
-	router.GET("/", func(c *gin.Context) {
-		SuccessResponse(c, 200, gin.H{
-			"message": "ISO Manager API",
-			"version": "1.0.0",
-			"endpoints": gin.H{
-				"api":    "/api/isos",
-				"images": "/images/",
-				"ws":     "/ws",
-				"health": "/health",
-			},
-		})
+	// Serve frontend static files
+	// In production, frontend is built into ui/dist
+	// In development, frontend runs on separate port (3000 or 5173)
+	frontendPath := "./ui/dist"
+
+	// Serve static assets (JS, CSS, images, etc.)
+	router.Static("/static", frontendPath+"/static")
+
+	// Serve favicon
+	router.StaticFile("/favicon.png", frontendPath+"/favicon.png")
+
+	// Serve index.html for root and all other routes (for React Router)
+	router.NoRoute(func(c *gin.Context) {
+		// Don't serve index.html for API routes, WS, images, or health check
+		path := c.Request.URL.Path
+		if len(path) >= 4 && path[:4] == "/api" {
+			ErrorResponse(c, 404, "NOT_FOUND", "API endpoint not found")
+			return
+		}
+		if path == "/ws" || (len(path) >= 7 && path[:7] == "/images") || path == "/health" {
+			ErrorResponse(c, 404, "NOT_FOUND", "Resource not found")
+			return
+		}
+
+		// Serve index.html for all other routes (SPA routing)
+		c.File(frontendPath + "/index.html")
 	})
 
 	return router
