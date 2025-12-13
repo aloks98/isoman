@@ -16,11 +16,13 @@ jobs:
   update-version-and-tag:
     name: Update Version and Create Tag
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Allow pushing commits and tags
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT_TOKEN }}
 
       - name: Validate version format
         run: |
