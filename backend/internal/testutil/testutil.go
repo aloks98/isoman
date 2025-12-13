@@ -71,6 +71,7 @@ func SetupTestDB(t *testing.T) (*db.DB, func()) {
 	dbPath := filepath.Join(tmpDir, "test.db")
 
 	cfg := config.Load()
+
 	database, err := db.New(dbPath, &cfg.Database)
 	if err != nil {
 		t.Fatalf("Failed to create test database: %v", err)

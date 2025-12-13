@@ -48,18 +48,35 @@ isoman/
 │       │   └── .tmp/              # Temporary download directory
 │       └── db/
 │           └── isos.db            # SQLite database
-├── frontend/
-│   └── src/
-│       ├── types/iso.ts           # TypeScript type definitions
-│       ├── api/isos.ts            # API client for backend communication
-│       ├── stores/isoStore.ts     # Zustand state management
-│       ├── hooks/useWebSocket.ts  # WebSocket connection hook
-│       └── components/
-│           ├── AddIsoForm.tsx     # Form to add new ISO downloads
-│           ├── IsoList.tsx        # List of all ISOs
-│           ├── IsoCard.tsx        # Individual ISO display with actions
-│           └── ProgressBar.tsx    # Visual progress indicator
-└── plan/                          # Implementation phases (PLAN.md, PHASE_1-6.md)
+└── ui/
+    └── src/
+        ├── types/iso.ts           # TypeScript type definitions
+        ├── api/isos.ts            # API client for backend communication
+        ├── stores/                # Zustand state management
+        │   └── useAppStore.ts     # Global UI state (theme, view mode, WebSocket status)
+        ├── hooks/
+        │   ├── useWebSocket.ts    # WebSocket connection hook
+        │   └── useCopyWithFeedback.ts  # Copy to clipboard with feedback
+        ├── lib/                   # Utility functions
+        │   ├── format.ts          # Formatting utilities (bytes, dates)
+        │   ├── iso-utils.ts       # ISO-specific utilities
+        │   └── status-config.ts   # Status badge configuration
+        ├── layouts/               # Layout components
+        │   ├── MainLayout.tsx     # Main layout with header/footer
+        │   ├── Header.tsx         # Application header
+        │   └── Footer.tsx         # Application footer
+        ├── routes/                # Route components
+        │   ├── Root.tsx           # Root route (redirects to /isos)
+        │   ├── NotFound.tsx       # 404 page
+        │   └── isos/IsosPage.tsx  # Main ISOs page (container)
+        └── components/
+            ├── AddIsoForm.tsx     # Form to add new ISO downloads
+            ├── IsoList.tsx        # List of all ISOs (presentational)
+            ├── IsoCard.tsx        # Individual ISO card view
+            ├── IsoListView.tsx    # Table view for ISOs
+            ├── ProgressBar.tsx    # Visual progress indicator
+            ├── StatusBadge.tsx    # Status badge component
+            └── DarkModeToggle.tsx # Theme toggle
 ```
 
 ## Development Commands
@@ -76,14 +93,18 @@ go mod tidy                        # Clean up dependencies
 ```
 
 **Environment Variables:**
-- `PORT` (default: 8080) - HTTP server port
-- `DATA_DIR` (default: ./data) - Base data directory
-- `WORKER_COUNT` (default: 2) - Number of concurrent download workers
+
+See `backend/ENV.md` for comprehensive documentation of all 26 configurable environment variables including:
+- Server configuration (PORT, timeouts, CORS)
+- Database settings (connection pool, journal mode)
+- Download configuration (workers, retries, buffer sizes)
+- WebSocket settings
+- Logging configuration
 
 ### Frontend (React with Bun)
 
 ```bash
-# From frontend/ directory
+# From ui/ directory
 bun install                        # Install dependencies
 bun run dev                        # Start Vite dev server (port 5173, proxies to backend)
 bun run build                      # Production build to dist/
@@ -410,14 +431,16 @@ The `/images/` endpoint serves a modern, responsive directory listing built with
 
 ## Implementation Status
 
-The project is currently in the **planning phase**. See `plan/PLAN.md` for overview and `plan/PHASE_1.md` through `plan/PHASE_6.md` for detailed implementation steps:
+The project is **fully implemented** with the following features:
 
-1. **Phase 1**: Project setup, database, models
-2. **Phase 2**: Download manager with checksum verification
-3. **Phase 3**: REST API + static file serving
-4. **Phase 4**: WebSocket progress updates
-5. **Phase 5**: React frontend
-6. **Phase 6**: Docker deployment
+1. ✅ **Backend**: Go service with SQLite database, golang-migrate for migrations
+2. ✅ **Service Layer**: ISO download management with concurrent workers
+3. ✅ **REST API**: Full CRUD operations with uniform response format
+4. ✅ **WebSocket**: Real-time progress updates to connected clients
+5. ✅ **Frontend**: React + TypeScript with Zustand state management and React Router
+6. ✅ **Docker**: Single container deployment with multi-stage build
+7. ✅ **Configuration**: Viper-based environment variable management (see `backend/ENV.md`)
+8. ✅ **Migrations**: Automated database migrations (see `backend/MIGRATIONS.md`)
 
 ## Key Design Decisions
 
@@ -432,18 +455,18 @@ The project is currently in the **planning phase**. See `plan/PLAN.md` for overv
 
 **Single container deployment:**
 - Frontend built with Bun and copied into backend container
-- Gin serves static files from `frontend/dist` at `/`
+- Gin serves static files from `ui/dist` at `/`
 - Single port exposure (8080)
 - Alpine-based image for minimal size
 
 **Dockerfile structure:**
 ```dockerfile
 # Stage 1: Build frontend with Bun
-FROM oven/bun:1 AS frontend
+FROM oven/bun:1 AS ui
 WORKDIR /app
-COPY frontend/package.json frontend/bun.lockb ./
+COPY ui/package.json ui/bun.lockb ./
 RUN bun install
-COPY frontend/ .
+COPY ui/ .
 RUN bun run build
 
 # Stage 2: Build backend
@@ -459,17 +482,17 @@ FROM alpine:3.19
 RUN apk --no-cache add ca-certificates
 WORKDIR /app
 COPY --from=backend /app/server .
-COPY --from=frontend /app/dist ./frontend/dist
+COPY --from=ui /app/dist ./ui/dist
 EXPOSE 8080
 CMD ["./server"]
 ```
 
 **Gin routing** in `routes.go`:
 ```go
-r.Static("/assets", "./frontend/dist/assets")
-r.StaticFile("/", "./frontend/dist/index.html")
+r.Static("/assets", "./ui/dist/assets")
+r.StaticFile("/", "./ui/dist/index.html")
 r.NoRoute(func(c *gin.Context) {
-    c.File("./frontend/dist/index.html")
+    c.File("./ui/dist/index.html")
 })
 ```
 

@@ -6,7 +6,11 @@ import (
 	"linux-iso-manager/internal/config"
 	"linux-iso-manager/internal/models"
 	"log/slog"
+	"os"
 
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/sqlite"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "modernc.org/sqlite"
 )
 
@@ -112,36 +116,52 @@ func (db *DB) Close() error {
 	return db.conn.Close()
 }
 
-// migrate creates the isos table if it doesn't exist
+// migrate runs database migrations using golang-migrate
 func (db *DB) migrate() error {
-	query := `
-	CREATE TABLE IF NOT EXISTS isos (
-		id TEXT PRIMARY KEY,
-		name TEXT NOT NULL,
-		version TEXT NOT NULL,
-		arch TEXT NOT NULL,
-		edition TEXT NOT NULL DEFAULT '',
-		file_type TEXT NOT NULL,
-		filename TEXT NOT NULL,
-		file_path TEXT NOT NULL,
-		download_link TEXT NOT NULL,
-		size_bytes INTEGER DEFAULT 0,
-		checksum TEXT DEFAULT '',
-		checksum_type TEXT DEFAULT '',
-		download_url TEXT NOT NULL,
-		checksum_url TEXT DEFAULT '',
-		status TEXT NOT NULL,
-		progress INTEGER DEFAULT 0,
-		error_message TEXT DEFAULT '',
-		created_at TIMESTAMP NOT NULL,
-		completed_at TIMESTAMP,
-		UNIQUE(name, version, arch, edition, file_type)
-	);
-	`
-	if _, err := db.conn.Exec(query); err != nil {
-		return fmt.Errorf("failed to create isos table: %w", err)
+	// Create a driver instance for golang-migrate
+	driver, err := sqlite.WithInstance(db.conn, &sqlite.Config{})
+	if err != nil {
+		return fmt.Errorf("failed to create migration driver: %w", err)
 	}
+
+	// Find migrations directory - try multiple paths for production and tests
+	migrationsPath := findMigrationsPath()
+	sourceURL := fmt.Sprintf("file://%s", migrationsPath)
+
+	// Create migrate instance with file source
+	m, err := migrate.NewWithDatabaseInstance(
+		sourceURL,
+		"sqlite", driver)
+	if err != nil {
+		return fmt.Errorf("failed to create migrate instance: %w", err)
+	}
+
+	// Run migrations
+	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+		return fmt.Errorf("failed to run migrations: %w", err)
+	}
+
+	slog.Info("Database migrations completed successfully")
 	return nil
+}
+
+// findMigrationsPath finds the migrations directory
+// Checks multiple paths to work in both production and test environments
+func findMigrationsPath() string {
+	paths := []string{
+		"./migrations",        // Production: binary in project root
+		"../../migrations",    // Tests: internal/db/sqlite_test.go
+		"../../../migrations", // Tests: internal/download/*_test.go
+	}
+
+	for _, path := range paths {
+		if _, err := os.Stat(path); err == nil {
+			return path
+		}
+	}
+
+	// Default fallback
+	return "./migrations"
 }
 
 // CreateISO inserts a new ISO record into the database

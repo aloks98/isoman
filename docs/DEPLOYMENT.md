@@ -4,8 +4,8 @@ Complete guide for deploying ISOMan in production.
 
 ## Deployment Options
 
-1. **Docker (Recommended)** - Single container with embedded frontend
-2. **Manual** - Separate backend binary and static frontend files
+1. **Docker (Recommended)** - Single container with embedded UI
+2. **Manual** - Separate backend binary and static UI files
 3. **Development** - Local development with hot reload
 
 ---
@@ -73,9 +73,13 @@ docker run -d \
 ```
 
 **Available Environment Variables:**
+
+See `backend/ENV.md` for complete list of 26 environment variables. Common ones include:
 - `PORT` - HTTP server port (default: 8080)
 - `DATA_DIR` - Base data directory (default: /data)
 - `WORKER_COUNT` - Number of concurrent downloads (default: 2)
+- `LOG_LEVEL` - Logging level (default: info)
+- `DB_MAX_OPEN_CONNS` - Database connection pool size (default: 10)
 
 ### Docker Compose
 
@@ -185,7 +189,7 @@ caddy run
    CGO_ENABLED=0 go build -ldflags="-w -s" -o server .
    ```
 
-2. **Build the frontend**
+2. **Build the UI**
    ```bash
    cd ui
    bun install
@@ -196,8 +200,8 @@ caddy run
    ```
    /opt/isoman/
    ├── server           # Backend binary
-   ├── frontend/
-   │   └── dist/       # Built frontend files
+   ├── ui/
+   │   └── dist/       # Built UI files
    └── data/           # Data directory (created automatically)
    ```
 
@@ -270,7 +274,7 @@ sudo systemctl start isoman
 4. **File permissions**
    ```bash
    chmod 755 /opt/isoman/server
-   chmod -R 755 /opt/isoman/frontend/dist
+   chmod -R 755 /opt/isoman/ui/dist
    chmod 700 /opt/isoman/data
    ```
 
@@ -363,9 +367,9 @@ sudo systemctl start isoman
    # Replace binary
    sudo cp server /opt/isoman/server
 
-   # Replace frontend
-   sudo rm -rf /opt/isoman/frontend/dist
-   sudo cp -r dist /opt/isoman/frontend/
+   # Replace UI
+   sudo rm -rf /opt/isoman/ui/dist
+   sudo cp -r dist /opt/isoman/ui/
 
    # Start service
    sudo systemctl start isoman
