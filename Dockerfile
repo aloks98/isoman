@@ -13,8 +13,9 @@ WORKDIR /app/ui
 # Copy package files
 COPY ui/package.json ui/bun.lock ./
 
-# Install dependencies
-RUN bun install --frozen-lockfile
+# Install dependencies with cache mount
+RUN --mount=type=cache,target=/root/.bun/install/cache \
+    bun install --frozen-lockfile
 
 # Copy frontend source
 COPY ui/ ./
@@ -38,8 +39,9 @@ RUN apk add --no-cache git
 # Copy go mod files
 COPY backend/go.mod backend/go.sum ./
 
-# Download dependencies
-RUN go mod download
+# Download dependencies with cache mount
+RUN --mount=type=cache,target=/go/pkg/mod \
+    go mod download
 
 # Copy backend source
 COPY backend/ ./
@@ -69,6 +71,9 @@ COPY --from=backend-builder /app/server ./server
 
 # Copy frontend dist from builder
 COPY --from=frontend-builder /app/ui/dist ./ui/dist
+
+# Copy migrations directory from builder
+COPY --from=backend-builder /app/migrations ./migrations
 
 # Copy entrypoint script
 COPY backend/docker-entrypoint.sh /entrypoint.sh
