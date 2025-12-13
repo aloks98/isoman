@@ -1,10 +1,9 @@
 import { Wifi, WifiOff } from 'lucide-react';
+import { useAppStore } from '@/stores';
 
-interface WebSocketStatusProps {
-  isConnected: boolean;
-}
+export function WebSocketStatus() {
+  const isConnected = useAppStore((state) => state.wsConnected);
 
-export function WebSocketStatus({ isConnected }: WebSocketStatusProps) {
   return (
     <div className="flex items-center gap-2 text-xs">
       {isConnected ? (

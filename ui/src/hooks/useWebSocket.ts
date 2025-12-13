@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import type { WSProgressMessage } from '../types/iso';
+import { useAppStore } from '@/stores';
 
 /**
  * WebSocket URL - defaults to same origin in production
@@ -40,6 +41,13 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
   const reconnectAttemptsRef = useRef(0);
   const reconnectTimeoutRef = useRef<number | null>(null);
   const isMountedRef = useRef(true);
+  const onMessageRef = useRef(onMessage);
+  const setWsConnected = useAppStore.getState().setWsConnected;
+
+  // Keep onMessage ref up to date
+  useEffect(() => {
+    onMessageRef.current = onMessage;
+  }, [onMessage]);
 
   const connect = useCallback(() => {
     if (!isMountedRef.current) return;
@@ -52,12 +60,13 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       ws.onopen = () => {
         console.log('[WebSocket] Connected successfully');
         reconnectAttemptsRef.current = 0;
+        setWsConnected(true);
       };
 
       ws.onmessage = (event) => {
         try {
           const message: WSProgressMessage = JSON.parse(event.data);
-          onMessage?.(message);
+          onMessageRef.current?.(message);
         } catch (error) {
           console.error('[WebSocket] Failed to parse message:', error);
         }
@@ -70,6 +79,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       ws.onclose = () => {
         console.log('[WebSocket] Disconnected');
         wsRef.current = null;
+        setWsConnected(false);
 
         // Attempt to reconnect if we haven't exceeded max attempts
         if (
@@ -91,7 +101,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     } catch (error) {
       console.error('[WebSocket] Failed to connect:', error);
     }
-  }, [onMessage, reconnectInterval, maxReconnectAttempts]);
+  }, [reconnectInterval, maxReconnectAttempts]);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -111,11 +121,12 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
         wsRef.current.close();
         wsRef.current = null;
       }
+
+      setWsConnected(false);
     };
   }, [connect]);
 
   return {
     ws: wsRef.current,
-    isConnected: wsRef.current?.readyState === WebSocket.OPEN,
   };
 }

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -37,6 +38,8 @@ interface AddIsoFormProps {
 }
 
 export function AddIsoForm({ onSubmit }: AddIsoFormProps) {
+  const [open, setOpen] = useState(false);
+
   const {
     register,
     handleSubmit,
@@ -64,7 +67,7 @@ export function AddIsoForm({ onSubmit }: AddIsoFormProps) {
     try {
       await onSubmit(data as CreateISORequest);
       reset();
-      // Close dialog by resetting form - dialog is controlled by open state
+      setOpen(false);
     } catch (error) {
       // Error handling is done in the parent component
       console.error('Failed to create ISO:', error);
@@ -72,7 +75,7 @@ export function AddIsoForm({ onSubmit }: AddIsoFormProps) {
   };
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button>
           <Plus />
