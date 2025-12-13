@@ -113,22 +113,14 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ secrets.DOCKER_USERNAME }}/isoman
-          tags: |
-            type=semver,pattern={{version}}
-            type=raw,value=latest
-
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/isoman:${{ steps.version.outputs.version }}
+            ${{ secrets.DOCKER_USERNAME }}/isoman:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |

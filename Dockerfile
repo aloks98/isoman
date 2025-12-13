@@ -55,8 +55,8 @@ RUN CGO_ENABLED=0 GOOS=linux go build \
 # ============================================
 FROM alpine:3.19
 
-# Install ca-certificates for HTTPS downloads
-RUN apk --no-cache add ca-certificates tzdata
+# Install ca-certificates for HTTPS downloads and su-exec for privilege dropping
+RUN apk --no-cache add ca-certificates tzdata su-exec
 
 # Create non-root user
 RUN addgroup -g 1000 isoman && \
@@ -70,12 +70,16 @@ COPY --from=backend-builder /app/server ./server
 # Copy frontend dist from builder
 COPY --from=frontend-builder /app/ui/dist ./ui/dist
 
+# Copy entrypoint script
+COPY backend/docker-entrypoint.sh /entrypoint.sh
+
 # Create data directory with proper permissions
 RUN mkdir -p /data/isos /data/db && \
-    chown -R isoman:isoman /app /data
+    chown -R isoman:isoman /app /data && \
+    chmod +x /entrypoint.sh
 
-# Switch to non-root user
-USER isoman
+# Set entrypoint (runs as root, then drops to isoman user)
+ENTRYPOINT ["/entrypoint.sh"]
 
 # Expose port
 EXPOSE 8080
@@ -90,5 +94,5 @@ ENV GIN_MODE=release
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
 
-# Run the server
+# Run the server (passed to entrypoint)
 CMD ["./server"]
