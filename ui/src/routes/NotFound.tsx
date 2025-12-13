@@ -1,5 +1,5 @@
-import { Link } from 'react-router';
 import { Server } from 'lucide-react';
+import { Link } from 'react-router';
 
 export function NotFound() {
   return (

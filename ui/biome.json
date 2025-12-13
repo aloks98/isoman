@@ -22,13 +22,20 @@
   },
   "css": {
     "parser": {
-      "cssModules": true
+      "cssModules": true,
+      "tailwindDirectives": true
     }
   },
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true
+      "recommended": true,
+      "suspicious": {
+        "noExplicitAny": "warn"
+      },
+      "a11y": {
+        "noSvgWithoutTitle": "warn"
+      }
     }
   }
 }

@@ -1,11 +1,11 @@
 'use client';
 
-import * as React from 'react';
-import { isValidElement, ReactNode } from 'react';
-import { cn } from '@/lib/utils';
-import { cva, VariantProps } from 'class-variance-authority';
+import { cva, type VariantProps } from 'class-variance-authority';
 import { Check, ChevronDown, ChevronUp } from 'lucide-react';
 import { Select as SelectPrimitive } from 'radix-ui';
+import * as React from 'react';
+import { isValidElement, type ReactNode } from 'react';
+import { cn } from '@/lib/utils';
 
 // Create a Context for `indicatorPosition` and `indicator` control
 const SelectContext = React.createContext<{
@@ -26,17 +26,23 @@ const Select = ({
   indicator?: ReactNode;
 } & React.ComponentProps<typeof SelectPrimitive.Root>) => {
   return (
-    <SelectContext.Provider value={{ indicatorPosition, indicatorVisibility, indicator }}>
+    <SelectContext.Provider
+      value={{ indicatorPosition, indicatorVisibility, indicator }}
+    >
       <SelectPrimitive.Root {...props} />
     </SelectContext.Provider>
   );
 };
 
-function SelectGroup({ ...props }: React.ComponentProps<typeof SelectPrimitive.Group>) {
+function SelectGroup({
+  ...props
+}: React.ComponentProps<typeof SelectPrimitive.Group>) {
   return <SelectPrimitive.Group data-slot="select-group" {...props} />;
 }
 
-function SelectValue({ ...props }: React.ComponentProps<typeof SelectPrimitive.Value>) {
+function SelectValue({
+  ...props
+}: React.ComponentProps<typeof SelectPrimitive.Value>) {
   return <SelectPrimitive.Value data-slot="select-value" {...props} />;
 }
 
@@ -68,7 +74,12 @@ export interface SelectTriggerProps
   extends React.ComponentProps<typeof SelectPrimitive.Trigger>,
     VariantProps<typeof selectTriggerVariants> {}
 
-function SelectTrigger({ className, children, size, ...props }: SelectTriggerProps) {
+function SelectTrigger({
+  className,
+  children,
+  size,
+  ...props
+}: SelectTriggerProps) {
   return (
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
@@ -83,11 +94,17 @@ function SelectTrigger({ className, children, size, ...props }: SelectTriggerPro
   );
 }
 
-function SelectScrollUpButton({ className, ...props }: React.ComponentProps<typeof SelectPrimitive.ScrollUpButton>) {
+function SelectScrollUpButton({
+  className,
+  ...props
+}: React.ComponentProps<typeof SelectPrimitive.ScrollUpButton>) {
   return (
     <SelectPrimitive.ScrollUpButton
       data-slot="select-scroll-up-button"
-      className={cn('flex cursor-default items-center justify-center py-1', className)}
+      className={cn(
+        'flex cursor-default items-center justify-center py-1',
+        className,
+      )}
       {...props}
     >
       <ChevronUp className="h-4 w-4" />
@@ -102,7 +119,10 @@ function SelectScrollDownButton({
   return (
     <SelectPrimitive.ScrollDownButton
       data-slot="select-scroll-down-button"
-      className={cn('flex cursor-default items-center justify-center py-1', className)}
+      className={cn(
+        'flex cursor-default items-center justify-center py-1',
+        className,
+      )}
       {...props}
     >
       <ChevronDown className="h-4 w-4" />
@@ -145,18 +165,29 @@ function SelectContent({
   );
 }
 
-function SelectLabel({ className, ...props }: React.ComponentProps<typeof SelectPrimitive.Label>) {
+function SelectLabel({
+  className,
+  ...props
+}: React.ComponentProps<typeof SelectPrimitive.Label>) {
   return (
     <SelectPrimitive.Label
       data-slot="select-label"
-      className={cn('py-1.5 ps-8 pe-2 text-xs text-muted-foreground font-medium', className)}
+      className={cn(
+        'py-1.5 ps-8 pe-2 text-xs text-muted-foreground font-medium',
+        className,
+      )}
       {...props}
     />
   );
 }
 
-function SelectItem({ className, children, ...props }: React.ComponentProps<typeof SelectPrimitive.Item>) {
-  const { indicatorPosition, indicatorVisibility, indicator } = React.useContext(SelectContext);
+function SelectItem({
+  className,
+  children,
+  ...props
+}: React.ComponentProps<typeof SelectPrimitive.Item>) {
+  const { indicatorPosition, indicatorVisibility, indicator } =
+    React.useContext(SelectContext);
 
   return (
     <SelectPrimitive.Item
@@ -210,7 +241,10 @@ function SelectIndicator({
   );
 }
 
-function SelectSeparator({ className, ...props }: React.ComponentProps<typeof SelectPrimitive.Separator>) {
+function SelectSeparator({
+  className,
+  ...props
+}: React.ComponentProps<typeof SelectPrimitive.Separator>) {
   return (
     <SelectPrimitive.Separator
       data-slot="select-separator"

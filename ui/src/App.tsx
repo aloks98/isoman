@@ -1,8 +1,8 @@
-import { BrowserRouter, Routes, Route } from 'react-router';
+import { BrowserRouter, Route, Routes } from 'react-router';
 import { MainLayout } from './layouts/MainLayout';
-import { Root } from './routes/Root';
 import { IsosPage } from './routes/isos/IsosPage';
 import { NotFound } from './routes/NotFound';
+import { Root } from './routes/Root';
 import './index.css';
 
 export default function App() {

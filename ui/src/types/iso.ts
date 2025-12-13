@@ -26,7 +26,12 @@ export interface ISO {
 /**
  * ISO status enum matching backend
  */
-export type ISOStatus = 'pending' | 'downloading' | 'verifying' | 'complete' | 'failed';
+export type ISOStatus =
+  | 'pending'
+  | 'downloading'
+  | 'verifying'
+  | 'complete'
+  | 'failed';
 
 /**
  * Request payload for creating a new ISO download

@@ -1,5 +1,5 @@
-import type { ISOStatus } from '../types/iso';
 import type { BadgeProps } from '@/components/ui/badge';
+import type { ISOStatus } from '../types/iso';
 
 export interface StatusConfig {
   label: string;

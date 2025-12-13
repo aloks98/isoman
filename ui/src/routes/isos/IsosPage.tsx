@@ -1,10 +1,10 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { IsoList } from '@/components/IsoList';
-import type { ISO, CreateISORequest, WSProgressMessage } from '@/types/iso';
-import { listISOs, createISO, deleteISO, retryISO } from '@/lib/api';
 import { useWebSocket } from '@/hooks/useWebSocket';
+import { createISO, deleteISO, listISOs, retryISO } from '@/lib/api';
 import { useAppStore } from '@/stores';
+import type { CreateISORequest, ISO, WSProgressMessage } from '@/types/iso';
 
 export function IsosPage() {
   const queryClient = useQueryClient();
@@ -14,7 +14,11 @@ export function IsosPage() {
   const setViewMode = useAppStore((state) => state.setViewMode);
 
   // Fetch ISOs with React Query
-  const { data: isos = [], isLoading, error } = useQuery({
+  const {
+    data: isos = [],
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['isos'],
     queryFn: listISOs,
   });
@@ -28,12 +32,19 @@ export function IsosPage() {
 
           const updatedIsos = oldData.map((iso) =>
             iso.id === message.payload.id
-              ? { ...iso, progress: message.payload.progress, status: message.payload.status }
-              : iso
+              ? {
+                  ...iso,
+                  progress: message.payload.progress,
+                  status: message.payload.status,
+                }
+              : iso,
           );
 
           // If status is complete or failed, refetch to get updated fields (error_message, checksum, etc.)
-          if (message.payload.status === 'complete' || message.payload.status === 'failed') {
+          if (
+            message.payload.status === 'complete' ||
+            message.payload.status === 'failed'
+          ) {
             queryClient.invalidateQueries({ queryKey: ['isos'] });
           }
 
@@ -41,7 +52,7 @@ export function IsosPage() {
         });
       }
     },
-    [queryClient]
+    [queryClient],
   );
 
   // Set up WebSocket connection

@@ -1,18 +1,26 @@
-import { ProgressBar } from './ProgressBar';
-import type { ISO } from '../types/iso';
-import { Download, Trash2, RefreshCw, ExternalLink, Copy, Check, MoreVertical } from 'lucide-react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import {
+  Check,
+  Copy,
+  Download,
+  ExternalLink,
+  MoreVertical,
+  RefreshCw,
+  Trash2,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { formatBytes, formatDate } from '@/lib/format';
-import { getFullDownloadUrl, getFullChecksumUrl } from '@/lib/iso-utils';
-import { StatusBadge } from './StatusBadge';
 import { useCopyWithFeedback } from '@/hooks/useCopyWithFeedback';
+import { formatBytes, formatDate } from '@/lib/format';
+import { getFullChecksumUrl, getFullDownloadUrl } from '@/lib/iso-utils';
+import type { ISO } from '../types/iso';
+import { ProgressBar } from './ProgressBar';
+import { StatusBadge } from './StatusBadge';
 
 interface IsoCardProps {
   iso: ISO;
@@ -30,7 +38,9 @@ export function IsoCard({ iso, onDelete, onRetry }: IsoCardProps) {
       <CardHeader className="flex flex-row items-center justify-between space-y-0 py-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 mb-2">
-            <h3 className="text-lg font-semibold text-foreground">{iso.name}</h3>
+            <h3 className="text-lg font-semibold text-foreground">
+              {iso.name}
+            </h3>
             <StatusBadge status={iso.status} />
           </div>
           <div className="flex gap-2 text-sm text-muted-foreground font-mono">
@@ -55,12 +65,19 @@ export function IsoCard({ iso, onDelete, onRetry }: IsoCardProps) {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem asChild>
-              <a href={iso.download_url} target="_blank" rel="noopener noreferrer">
+              <a
+                href={iso.download_url}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 <ExternalLink className="w-4 h-4 mr-2" />
                 View Source
               </a>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onDelete(iso.id)} className="text-destructive">
+            <DropdownMenuItem
+              onClick={() => onDelete(iso.id)}
+              className="text-destructive"
+            >
               <Trash2 className="w-4 h-4 mr-2" />
               Delete ISO
             </DropdownMenuItem>
@@ -68,7 +85,6 @@ export function IsoCard({ iso, onDelete, onRetry }: IsoCardProps) {
         </DropdownMenu>
       </CardHeader>
       <CardContent>
-
         {iso.status !== 'complete' && iso.status !== 'failed' && (
           <div className="mb-4">
             <ProgressBar progress={iso.progress} status={iso.status} />
@@ -77,7 +93,9 @@ export function IsoCard({ iso, onDelete, onRetry }: IsoCardProps) {
 
         {iso.error_message && (
           <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
-            <p className="text-sm text-destructive break-words">{iso.error_message}</p>
+            <p className="text-sm text-destructive break-words">
+              {iso.error_message}
+            </p>
           </div>
         )}
 
@@ -91,19 +109,26 @@ export function IsoCard({ iso, onDelete, onRetry }: IsoCardProps) {
           {iso.checksum && (
             <div className="flex justify-between">
               <span className="text-muted-foreground">Checksum:</span>
-              <span className="font-mono text-xs truncate max-w-[200px]" title={iso.checksum}>
+              <span
+                className="font-mono text-xs truncate max-w-[200px]"
+                title={iso.checksum}
+              >
                 {iso.checksum.substring(0, 16)}...
               </span>
             </div>
           )}
           <div className="flex justify-between">
             <span className="text-muted-foreground">Created:</span>
-            <span className="font-mono text-xs">{formatDate(iso.created_at)}</span>
+            <span className="font-mono text-xs">
+              {formatDate(iso.created_at)}
+            </span>
           </div>
           {iso.completed_at && (
             <div className="flex justify-between">
               <span className="text-muted-foreground">Completed:</span>
-              <span className="font-mono text-xs">{formatDate(iso.completed_at)}</span>
+              <span className="font-mono text-xs">
+                {formatDate(iso.completed_at)}
+              </span>
             </div>
           )}
         </div>
@@ -112,7 +137,11 @@ export function IsoCard({ iso, onDelete, onRetry }: IsoCardProps) {
           <div className="flex gap-2">
             {iso.status === 'complete' && (
               <Button asChild className="flex-1">
-                <a href={iso.download_link} target="_blank" rel="noopener noreferrer">
+                <a
+                  href={iso.download_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <Download />
                   Download
                 </a>

@@ -1,6 +1,6 @@
-import { useEffect, useRef, useCallback } from 'react';
-import type { WSProgressMessage } from '../types/iso';
+import { useCallback, useEffect, useRef } from 'react';
 import { useAppStore } from '@/stores';
+import type { WSProgressMessage } from '../types/iso';
 
 /**
  * WebSocket URL - defaults to same origin in production
@@ -42,7 +42,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
   const reconnectTimeoutRef = useRef<number | null>(null);
   const isMountedRef = useRef(true);
   const onMessageRef = useRef(onMessage);
-  const setWsConnected = useAppStore.getState().setWsConnected;
+  const setWsConnected = useAppStore((state) => state.setWsConnected);
 
   // Keep onMessage ref up to date
   useEffect(() => {
@@ -88,7 +88,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
         ) {
           reconnectAttemptsRef.current += 1;
           console.log(
-            `[WebSocket] Reconnecting... (attempt ${reconnectAttemptsRef.current}/${maxReconnectAttempts})`
+            `[WebSocket] Reconnecting... (attempt ${reconnectAttemptsRef.current}/${maxReconnectAttempts})`,
           );
 
           reconnectTimeoutRef.current = window.setTimeout(() => {
@@ -101,7 +101,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     } catch (error) {
       console.error('[WebSocket] Failed to connect:', error);
     }
-  }, [reconnectInterval, maxReconnectAttempts]);
+  }, [reconnectInterval, maxReconnectAttempts, setWsConnected]);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -124,7 +124,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 
       setWsConnected(false);
     };
-  }, [connect]);
+  }, [connect, setWsConnected]);
 
   return {
     ws: wsRef.current,

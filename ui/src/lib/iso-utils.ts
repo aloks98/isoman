@@ -6,7 +6,7 @@
  */
 export function getChecksumUrl(
   downloadLink: string,
-  checksumType: string | null | undefined
+  checksumType: string | null | undefined,
 ): string | null {
   return checksumType ? `${downloadLink}.${checksumType}` : null;
 }
@@ -28,7 +28,7 @@ export function getFullDownloadUrl(downloadLink: string): string {
  */
 export function getFullChecksumUrl(
   downloadLink: string,
-  checksumType: string | null | undefined
+  checksumType: string | null | undefined,
 ): string | null {
   const checksumPath = getChecksumUrl(downloadLink, checksumType);
   return checksumPath ? getFullDownloadUrl(checksumPath) : null;

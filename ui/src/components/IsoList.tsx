@@ -1,11 +1,5 @@
+import { LayoutGrid, List, Loader2, Server } from 'lucide-react';
 import { useState } from 'react';
-import { IsoCard } from './IsoCard';
-import { IsoListView } from './IsoListView';
-import { AddIsoForm } from './AddIsoForm';
-import { WebSocketStatus } from './WebSocketStatus';
-import type { ISO, CreateISORequest } from '../types/iso';
-import { Loader2, Server, LayoutGrid, List } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,6 +10,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import type { CreateISORequest, ISO } from '../types/iso';
+import { AddIsoForm } from './AddIsoForm';
+import { IsoCard } from './IsoCard';
+import { IsoListView } from './IsoListView';
+import { WebSocketStatus } from './WebSocketStatus';
 
 interface IsoListProps {
   isos: ISO[];
@@ -79,7 +79,9 @@ export function IsoList({
         <div>
           <h2 className="text-2xl font-bold">ISO Downloads</h2>
           <div className="flex items-center gap-3">
-            <p className="text-muted-foreground">Manage your Linux ISO downloads</p>
+            <p className="text-muted-foreground">
+              Manage your Linux ISO downloads
+            </p>
             <WebSocketStatus />
           </div>
         </div>
@@ -115,13 +117,20 @@ export function IsoList({
           <Server className="w-16 h-16 text-muted-foreground/50" />
           <div className="text-center">
             <p className="text-lg font-medium">No ISOs yet</p>
-            <p className="text-sm text-muted-foreground">Add your first ISO download to get started</p>
+            <p className="text-sm text-muted-foreground">
+              Add your first ISO download to get started
+            </p>
           </div>
         </div>
       ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {isos.map((iso) => (
-            <IsoCard key={iso.id} iso={iso} onDelete={handleDelete} onRetry={onRetryISO} />
+            <IsoCard
+              key={iso.id}
+              iso={iso}
+              onDelete={handleDelete}
+              onRetry={onRetryISO}
+            />
           ))}
         </div>
       ) : (
@@ -133,13 +142,16 @@ export function IsoList({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete ISO?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete <strong>{isoToDelete?.name}</strong>?
-              This action cannot be undone and will remove the ISO file from your server.
+              Are you sure you want to delete{' '}
+              <strong>{isoToDelete?.name}</strong>? This action cannot be undone
+              and will remove the ISO file from your server.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
+            <AlertDialogAction onClick={confirmDelete}>
+              Delete
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

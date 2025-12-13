@@ -1,10 +1,16 @@
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Loader2, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import type { CreateISORequest } from '../types/iso';
-import { Plus, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -13,13 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import type { CreateISORequest } from '../types/iso';
 
 const createISOSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -27,7 +27,11 @@ const createISOSchema = z.object({
   arch: z.enum(['x86_64', 'aarch64', 'arm64', 'i686']),
   edition: z.string().optional(),
   download_url: z.string().url('Must be a valid URL'),
-  checksum_url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  checksum_url: z
+    .string()
+    .url('Must be a valid URL')
+    .optional()
+    .or(z.literal('')),
   checksum_type: z.enum(['sha256', 'sha512', 'md5']).optional(),
 });
 
@@ -89,7 +93,10 @@ export function AddIsoForm({ onSubmit }: AddIsoFormProps) {
         <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4 mt-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="name" className="block text-sm font-medium mb-1.5">
+              <label
+                htmlFor="name"
+                className="block text-sm font-medium mb-1.5"
+              >
                 Name *
               </label>
               <Input
@@ -98,11 +105,18 @@ export function AddIsoForm({ onSubmit }: AddIsoFormProps) {
                 placeholder="Alpine Linux"
                 aria-invalid={!!errors.name}
               />
-              {errors.name && <p className="text-xs text-destructive mt-1">{errors.name.message}</p>}
+              {errors.name && (
+                <p className="text-xs text-destructive mt-1">
+                  {errors.name.message}
+                </p>
+              )}
             </div>
 
             <div>
-              <label htmlFor="version" className="block text-sm font-medium mb-1.5">
+              <label
+                htmlFor="version"
+                className="block text-sm font-medium mb-1.5"
+              >
                 Version *
               </label>
               <Input
@@ -111,14 +125,24 @@ export function AddIsoForm({ onSubmit }: AddIsoFormProps) {
                 placeholder="3.19.1"
                 aria-invalid={!!errors.version}
               />
-              {errors.version && <p className="text-xs text-destructive mt-1">{errors.version.message}</p>}
+              {errors.version && (
+                <p className="text-xs text-destructive mt-1">
+                  {errors.version.message}
+                </p>
+              )}
             </div>
 
             <div>
-              <label htmlFor="arch" className="block text-sm font-medium mb-1.5">
+              <label
+                htmlFor="arch"
+                className="block text-sm font-medium mb-1.5"
+              >
                 Architecture *
               </label>
-              <Select value={archValue} onValueChange={(value) => setValue('arch', value as any)}>
+              <Select
+                value={archValue}
+                onValueChange={(value) => setValue('arch', value as any)}
+              >
                 <SelectTrigger id="arch">
                   <SelectValue />
                 </SelectTrigger>
@@ -129,19 +153,33 @@ export function AddIsoForm({ onSubmit }: AddIsoFormProps) {
                   <SelectItem value="i686">i686</SelectItem>
                 </SelectContent>
               </Select>
-              {errors.arch && <p className="text-xs text-destructive mt-1">{errors.arch.message}</p>}
+              {errors.arch && (
+                <p className="text-xs text-destructive mt-1">
+                  {errors.arch.message}
+                </p>
+              )}
             </div>
 
             <div>
-              <label htmlFor="edition" className="block text-sm font-medium mb-1.5">
+              <label
+                htmlFor="edition"
+                className="block text-sm font-medium mb-1.5"
+              >
                 Edition
               </label>
-              <Input id="edition" {...register('edition')} placeholder="minimal, desktop, server" />
+              <Input
+                id="edition"
+                {...register('edition')}
+                placeholder="minimal, desktop, server"
+              />
             </div>
           </div>
 
           <div>
-            <label htmlFor="download_url" className="block text-sm font-medium mb-1.5">
+            <label
+              htmlFor="download_url"
+              className="block text-sm font-medium mb-1.5"
+            >
               Download URL *
             </label>
             <Input
@@ -152,13 +190,18 @@ export function AddIsoForm({ onSubmit }: AddIsoFormProps) {
               aria-invalid={!!errors.download_url}
             />
             {errors.download_url && (
-              <p className="text-xs text-destructive mt-1">{errors.download_url.message}</p>
+              <p className="text-xs text-destructive mt-1">
+                {errors.download_url.message}
+              </p>
             )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="md:col-span-2">
-              <label htmlFor="checksum_url" className="block text-sm font-medium mb-1.5">
+              <label
+                htmlFor="checksum_url"
+                className="block text-sm font-medium mb-1.5"
+              >
                 Checksum URL
               </label>
               <Input
@@ -169,17 +212,24 @@ export function AddIsoForm({ onSubmit }: AddIsoFormProps) {
                 aria-invalid={!!errors.checksum_url}
               />
               {errors.checksum_url && (
-                <p className="text-xs text-destructive mt-1">{errors.checksum_url.message}</p>
+                <p className="text-xs text-destructive mt-1">
+                  {errors.checksum_url.message}
+                </p>
               )}
             </div>
 
             <div>
-              <label htmlFor="checksum_type" className="block text-sm font-medium mb-1.5">
+              <label
+                htmlFor="checksum_type"
+                className="block text-sm font-medium mb-1.5"
+              >
                 Checksum Type
               </label>
               <Select
                 value={checksumTypeValue}
-                onValueChange={(value) => setValue('checksum_type', value as any)}
+                onValueChange={(value) =>
+                  setValue('checksum_type', value as any)
+                }
               >
                 <SelectTrigger id="checksum_type">
                   <SelectValue />

@@ -54,8 +54,8 @@ export const useAppStore = create<AppStore>()(
         viewMode: state.viewMode,
         // Don't persist wsConnected
       }),
-    }
-  )
+    },
+  ),
 );
 
 // Initialize theme on load

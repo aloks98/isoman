@@ -1,31 +1,39 @@
-import { useMemo } from 'react';
 import {
-  useReactTable,
+  type ColumnDef,
+  type ColumnFiltersState,
+  flexRender,
   getCoreRowModel,
-  getSortedRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
-  flexRender,
-  type ColumnDef,
+  getSortedRowModel,
   type SortingState,
-  type ColumnFiltersState,
+  useReactTable,
 } from '@tanstack/react-table';
-import type { ISO } from '../types/iso';
-import { Download, Trash2, RefreshCw, ExternalLink, Copy, Check, MoreVertical, ArrowUpDown } from 'lucide-react';
+import {
+  ArrowUpDown,
+  Check,
+  Copy,
+  Download,
+  ExternalLink,
+  MoreVertical,
+  RefreshCw,
+  Trash2,
+} from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
   DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { formatBytes, formatDateShort } from '@/lib/format';
-import { getFullDownloadUrl, getFullChecksumUrl } from '@/lib/iso-utils';
-import { StatusBadge } from './StatusBadge';
 import { useCopyWithFeedback } from '@/hooks/useCopyWithFeedback';
+import { formatBytes, formatDateShort } from '@/lib/format';
+import { getFullChecksumUrl, getFullDownloadUrl } from '@/lib/iso-utils';
 import { getStatusColor } from '@/lib/status-config';
-import { useState } from 'react';
+import type { ISO } from '../types/iso';
+import { StatusBadge } from './StatusBadge';
 
 interface IsoListViewProps {
   isos: ISO[];
@@ -46,7 +54,9 @@ export function IsoListView({ isos, onDelete, onRetry }: IsoListViewProps) {
           return (
             <Button
               variant="ghost"
-              onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+              onClick={() =>
+                column.toggleSorting(column.getIsSorted() === 'asc')
+              }
               className="h-8 px-2 -ml-2"
             >
               Name
@@ -59,7 +69,11 @@ export function IsoListView({ isos, onDelete, onRetry }: IsoListViewProps) {
           return (
             <div>
               <div className="font-medium">{iso.name}</div>
-              {iso.edition && <div className="text-xs text-muted-foreground">{iso.edition}</div>}
+              {iso.edition && (
+                <div className="text-xs text-muted-foreground">
+                  {iso.edition}
+                </div>
+              )}
             </div>
           );
         },
@@ -75,7 +89,9 @@ export function IsoListView({ isos, onDelete, onRetry }: IsoListViewProps) {
           return (
             <Button
               variant="ghost"
-              onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+              onClick={() =>
+                column.toggleSorting(column.getIsSorted() === 'asc')
+              }
               className="h-8 px-2 -ml-2"
             >
               Version
@@ -83,12 +99,16 @@ export function IsoListView({ isos, onDelete, onRetry }: IsoListViewProps) {
             </Button>
           );
         },
-        cell: ({ row }) => <span className="font-mono text-sm">{row.original.version}</span>,
+        cell: ({ row }) => (
+          <span className="font-mono text-sm">{row.original.version}</span>
+        ),
       },
       {
         accessorKey: 'arch',
         header: 'Arch',
-        cell: ({ row }) => <span className="font-mono text-sm">{row.original.arch}</span>,
+        cell: ({ row }) => (
+          <span className="font-mono text-sm">{row.original.arch}</span>
+        ),
       },
       {
         accessorKey: 'size_bytes',
@@ -96,7 +116,9 @@ export function IsoListView({ isos, onDelete, onRetry }: IsoListViewProps) {
           return (
             <Button
               variant="ghost"
-              onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+              onClick={() =>
+                column.toggleSorting(column.getIsSorted() === 'asc')
+              }
               className="h-8 px-2 -ml-2"
             >
               Size
@@ -106,7 +128,9 @@ export function IsoListView({ isos, onDelete, onRetry }: IsoListViewProps) {
         },
         cell: ({ row }) => (
           <span className="font-mono text-sm">
-            {row.original.size_bytes > 0 ? formatBytes(row.original.size_bytes) : '-'}
+            {row.original.size_bytes > 0
+              ? formatBytes(row.original.size_bytes)
+              : '-'}
           </span>
         ),
       },
@@ -124,7 +148,9 @@ export function IsoListView({ isos, onDelete, onRetry }: IsoListViewProps) {
                   style={{ width: `${iso.progress}%` }}
                 />
               </div>
-              <span className="text-xs font-mono text-muted-foreground">{iso.progress}%</span>
+              <span className="text-xs font-mono text-muted-foreground">
+                {iso.progress}%
+              </span>
             </div>
           );
         },
@@ -135,7 +161,9 @@ export function IsoListView({ isos, onDelete, onRetry }: IsoListViewProps) {
           return (
             <Button
               variant="ghost"
-              onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+              onClick={() =>
+                column.toggleSorting(column.getIsSorted() === 'asc')
+              }
               className="h-8 px-2 -ml-2"
             >
               Created
@@ -144,7 +172,9 @@ export function IsoListView({ isos, onDelete, onRetry }: IsoListViewProps) {
           );
         },
         cell: ({ row }) => (
-          <span className="font-mono text-xs text-muted-foreground">{formatDateShort(row.original.created_at)}</span>
+          <span className="font-mono text-xs text-muted-foreground">
+            {formatDateShort(row.original.created_at)}
+          </span>
         ),
       },
       {
@@ -152,7 +182,10 @@ export function IsoListView({ isos, onDelete, onRetry }: IsoListViewProps) {
         header: () => <div className="text-right">Actions</div>,
         cell: ({ row }) => {
           const iso = row.original;
-          const checksumUrl = getFullChecksumUrl(iso.download_link, iso.checksum_type);
+          const checksumUrl = getFullChecksumUrl(
+            iso.download_link,
+            iso.checksum_type,
+          );
           const downloadUrl = getFullDownloadUrl(iso.download_link);
           const copyKey = `${iso.id}`;
 
@@ -160,13 +193,24 @@ export function IsoListView({ isos, onDelete, onRetry }: IsoListViewProps) {
             <div className="flex items-center justify-end gap-1">
               {iso.status === 'complete' && (
                 <Button asChild variant="ghost" mode="icon" size="sm">
-                  <a href={iso.download_link} target="_blank" rel="noopener noreferrer" title="Download">
+                  <a
+                    href={iso.download_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Download"
+                  >
                     <Download className="w-4 h-4" />
                   </a>
                 </Button>
               )}
               {iso.status === 'failed' && (
-                <Button onClick={() => onRetry(iso.id)} variant="ghost" mode="icon" size="sm" title="Retry">
+                <Button
+                  onClick={() => onRetry(iso.id)}
+                  variant="ghost"
+                  mode="icon"
+                  size="sm"
+                  title="Retry"
+                >
                   <RefreshCw className="w-4 h-4" />
                 </Button>
               )}
@@ -178,7 +222,9 @@ export function IsoListView({ isos, onDelete, onRetry }: IsoListViewProps) {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem
-                    onClick={() => copyToClipboard(downloadUrl, `${copyKey}-download`)}
+                    onClick={() =>
+                      copyToClipboard(downloadUrl, `${copyKey}-download`)
+                    }
                   >
                     {copiedKey === `${copyKey}-download` ? (
                       <Check className="w-4 h-4 mr-2 text-green-500" />
@@ -189,7 +235,9 @@ export function IsoListView({ isos, onDelete, onRetry }: IsoListViewProps) {
                   </DropdownMenuItem>
                   {checksumUrl && (
                     <DropdownMenuItem
-                      onClick={() => copyToClipboard(checksumUrl, `${copyKey}-checksum`)}
+                      onClick={() =>
+                        copyToClipboard(checksumUrl, `${copyKey}-checksum`)
+                      }
                     >
                       {copiedKey === `${copyKey}-checksum` ? (
                         <Check className="w-4 h-4 mr-2 text-green-500" />
@@ -201,12 +249,19 @@ export function IsoListView({ isos, onDelete, onRetry }: IsoListViewProps) {
                   )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <a href={iso.download_url} target="_blank" rel="noopener noreferrer">
+                    <a
+                      href={iso.download_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
                       <ExternalLink className="w-4 h-4 mr-2" />
                       View Source
                     </a>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onDelete(iso.id)} className="text-destructive">
+                  <DropdownMenuItem
+                    onClick={() => onDelete(iso.id)}
+                    className="text-destructive"
+                  >
                     <Trash2 className="w-4 h-4 mr-2" />
                     Delete ISO
                   </DropdownMenuItem>
@@ -217,7 +272,7 @@ export function IsoListView({ isos, onDelete, onRetry }: IsoListViewProps) {
         },
       },
     ],
-    [copiedKey, onDelete, onRetry, copyToClipboard]
+    [copiedKey, onDelete, onRetry, copyToClipboard],
   );
 
   const table = useReactTable({
@@ -248,8 +303,16 @@ export function IsoListView({ isos, onDelete, onRetry }: IsoListViewProps) {
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <th key={header.id} className="text-left px-4 py-3 text-sm font-medium">
-                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                  <th
+                    key={header.id}
+                    className="text-left px-4 py-3 text-sm font-medium"
+                  >
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
                   </th>
                 ))}
               </tr>
@@ -258,16 +321,25 @@ export function IsoListView({ isos, onDelete, onRetry }: IsoListViewProps) {
           <tbody className="divide-y divide-border">
             {table.getRowModel().rows.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="px-4 py-8 text-center text-muted-foreground">
+                <td
+                  colSpan={columns.length}
+                  className="px-4 py-8 text-center text-muted-foreground"
+                >
                   No ISOs found
                 </td>
               </tr>
             ) : (
               table.getRowModel().rows.map((row) => (
-                <tr key={row.id} className="hover:bg-accent/50 transition-colors">
+                <tr
+                  key={row.id}
+                  className="hover:bg-accent/50 transition-colors"
+                >
                   {row.getVisibleCells().map((cell) => (
                     <td key={cell.id} className="px-4 py-3">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
                     </td>
                   ))}
                 </tr>
@@ -281,10 +353,15 @@ export function IsoListView({ isos, onDelete, onRetry }: IsoListViewProps) {
       {table.getPageCount() > 1 && (
         <div className="flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
-            Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to{' '}
+            Showing{' '}
+            {table.getState().pagination.pageIndex *
+              table.getState().pagination.pageSize +
+              1}{' '}
+            to{' '}
             {Math.min(
-              (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
-              table.getFilteredRowModel().rows.length
+              (table.getState().pagination.pageIndex + 1) *
+                table.getState().pagination.pageSize,
+              table.getFilteredRowModel().rows.length,
             )}{' '}
             of {table.getFilteredRowModel().rows.length} entries
           </div>
@@ -297,7 +374,12 @@ export function IsoListView({ isos, onDelete, onRetry }: IsoListViewProps) {
             >
               Previous
             </Button>
-            <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+            >
               Next
             </Button>
           </div>

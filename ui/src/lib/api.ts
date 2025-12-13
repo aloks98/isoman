@@ -11,7 +11,7 @@ const API_BASE_URL = import.meta.env.PUBLIC_API_URL || '';
  */
 async function apiFetch<T>(
   endpoint: string,
-  options?: RequestInit
+  options?: RequestInit,
 ): Promise<APIResponse<T>> {
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {

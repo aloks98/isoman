@@ -7,7 +7,12 @@ export function DarkModeToggle() {
   const toggleTheme = useAppStore((state) => state.toggleTheme);
 
   return (
-    <Button onClick={toggleTheme} variant="ghost" mode="icon" title={isDark ? 'Light mode' : 'Dark mode'}>
+    <Button
+      onClick={toggleTheme}
+      variant="ghost"
+      mode="icon"
+      title={isDark ? 'Light mode' : 'Dark mode'}
+    >
       {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
     </Button>
   );

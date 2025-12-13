@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge';
-import type { ISOStatus } from '../types/iso';
 import { STATUS_CONFIG } from '@/lib/status-config';
+import type { ISOStatus } from '../types/iso';
 
 interface StatusBadgeProps {
   status: ISOStatus | string;

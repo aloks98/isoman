@@ -1,9 +1,9 @@
 /** Fonts **/
-@import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap");
 
-@import 'tailwindcss';
+@import "tailwindcss";
 
-@import 'tw-animate-css';
+@import "tw-animate-css";
 
 /** Dark Mode Variant **/
 @custom-variant dark (&:is(.dark *));
@@ -11,7 +11,7 @@
 /** Colors **/
 :root {
   --font-sans: ui-sans-serif, system-ui, sans-serif;
-  --font-mono: 'Space Mono', ui-monospace, monospace;
+  --font-mono: "Space Mono", ui-monospace, monospace;
   --background: var(--color-white);
   --foreground: var(--color-zinc-950);
   --card: var(--color-white);
@@ -33,7 +33,9 @@
   --chart-3: var(--color-yellow-500);
   --chart-4: var(--color-red-500);
   --chart-5: var(--color-purple-500);
-  --border: oklch(94% 0.004 286.32); /* between --color-zinc-100 and --color-zinc-200 */
+  --border: oklch(
+    94% 0.004 286.32
+  ); /* between --color-zinc-100 and --color-zinc-200 */
   --input: var(--color-zinc-200);
   --ring: var(--color-zinc-400);
   --radius: 0.5rem;
@@ -127,7 +129,9 @@
 
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1;
   }
 
   *:focus-visible {
@@ -158,8 +162,8 @@
   margin-inline: auto;
   padding-inline: 1.5rem;
   @media (width >= --theme(--breakpoint-sm)) {
-  max-width: none;
-}
+    max-width: none;
+  }
   @media (width >= 1440px) {
     padding-inline: 2rem;
     max-width: 1440px;
