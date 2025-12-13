@@ -101,36 +101,75 @@ Configuration is in `ui/biome.json`:
 
 ## Pre-commit Hook Behavior
 
-When you run `git commit`, the hook will:
+When you run `git commit`, the hook will **CHECK ONLY** (not auto-fix):
 
 1. **Backend (.go files)**:
-   - Run `gofumpt` to format code
-   - Code is automatically formatted
+   - Run `gofumpt` to check formatting
+   - **Fails if code is not formatted**
 
 2. **Frontend (.ts, .tsx, .js, .jsx, .json, .css files)**:
-   - Run Biome check and format
-   - Code is automatically formatted and checked
+   - Run Biome check (lint + format check)
+   - **Fails if code has linting or formatting issues**
 
-If formatting changes files, you'll need to:
-```bash
-git add .
-git commit -m "your message"
-```
+### If the commit fails:
+
+1. **Format your code manually**:
+   ```bash
+   # Backend
+   cd backend && make fmt
+
+   # Frontend
+   cd ui && bun run check
+   ```
+
+2. **Stage the formatted files**:
+   ```bash
+   git add .
+   ```
+
+3. **Commit again**:
+   ```bash
+   git commit -m "your message"
+   ```
+
+This ensures:
+- Developers are aware of formatting issues before committing
+- CI validation is consistent with local pre-commit checks
+- No surprise auto-formatting in commits
 
 ## CI/CD Integration
 
-For CI/CD pipelines, run:
+For CI/CD pipelines, use the same check-only commands as pre-commit:
 
 ### Backend
 ```bash
 cd backend
-make ci  # Installs tools, checks formatting, lints, and tests
+make fmt-check  # Check formatting (fails if not formatted)
+make lint       # Run linters (fails if issues found)
+make test       # Run tests
+# Or run all checks together:
+make check      # fmt-check + lint + test
 ```
 
 ### Frontend
 ```bash
 cd ui
-bun run check
+bun run check-only  # Check formatting and linting (fails if issues found)
+# Or auto-fix issues (for local development):
+bun run check       # Auto-fix and apply changes
+```
+
+### Complete CI Pipeline
+
+```bash
+# Install backend tools
+cd backend && make install-tools
+
+# Check backend
+cd backend && make check  # fmt-check + lint + test
+
+# Check frontend
+cd ui && bun run check-only
 ```
 
 ## Troubleshooting

@@ -11,7 +11,7 @@
     "lint-staged": "^15.3.0"
   },
   "lint-staged": {
-    "backend/**/*.go": "make -C backend fmt",
-    "ui/**/*.{ts,tsx,js,jsx,json,css}": "cd ui && bun run check"
+    "backend/**/*.go": "make -C backend fmt-check",
+    "ui/**/*.{ts,tsx,js,jsx,json,css}": "cd ui && bun run check-only"
   }
 }
