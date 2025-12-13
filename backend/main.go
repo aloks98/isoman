@@ -20,6 +20,9 @@ import (
 	"linux-iso-manager/internal/ws"
 )
 
+// Version is set at build time via ldflags
+var Version = "dev"
+
 func main() {
 	// Load configuration from environment variables
 	cfg := config.Load()
@@ -29,6 +32,7 @@ func main() {
 	slog.SetDefault(log)
 
 	log.Info("starting ISO Manager server",
+		slog.String("version", Version),
 		slog.String("log_level", cfg.Log.Level),
 		slog.String("log_format", cfg.Log.Format),
 	)

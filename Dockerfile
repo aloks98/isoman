@@ -27,6 +27,9 @@ RUN bun run build
 # ============================================
 FROM golang:1.24-alpine AS backend-builder
 
+# Build argument for version
+ARG VERSION=dev
+
 WORKDIR /app
 
 # Install build dependencies
@@ -42,7 +45,10 @@ RUN go mod download
 COPY backend/ ./
 
 # Build backend binary (CGO_ENABLED=0 for static binary)
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o server .
+# Embed version in binary
+RUN CGO_ENABLED=0 GOOS=linux go build \
+    -ldflags="-w -s -X main.Version=${VERSION}" \
+    -o server .
 
 # ============================================
 # Stage 3: Runtime Image

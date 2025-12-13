@@ -1,0 +1,77 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., 1.2.3)'
+        required: true
+        type: string
+      release_title:
+        description: 'Release title (optional, defaults to "Release vX.Y.Z")'
+        required: false
+        type: string
+
+jobs:
+  update-version-and-tag:
+    name: Update Version and Create Tag
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate version format
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "❌ Error: Version must be in semver format (X.Y.Z)"
+            echo "Example: 1.2.3"
+            exit 1
+          fi
+          echo "✅ Valid version: $VERSION"
+
+      - name: Check if tag already exists
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          if git rev-parse "v$VERSION" >/dev/null 2>&1; then
+            echo "❌ Error: Tag v$VERSION already exists"
+            exit 1
+          fi
+          echo "✅ Tag v$VERSION does not exist"
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Update version files
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          chmod +x scripts/update-version.sh
+          ./scripts/update-version.sh "$VERSION"
+
+      - name: Commit version changes
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          git add package.json ui/package.json VERSION
+          git commit -m "chore: bump version to $VERSION [skip ci]"
+          git push origin master
+
+      - name: Create and push tag
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          RELEASE_TITLE="${{ github.event.inputs.release_title }}"
+
+          # Store custom title in tag annotation if provided
+          if [ -n "$RELEASE_TITLE" ]; then
+            TAG_MESSAGE="CUSTOM_TITLE: $RELEASE_TITLE"
+            git tag -a "v$VERSION" -m "$TAG_MESSAGE"
+          else
+            git tag -a "v$VERSION" -m "Release v$VERSION"
+          fi
+
+          git push origin "v$VERSION"
+          echo "✅ Created and pushed tag v$VERSION"
+          echo "🚀 Publish workflow will now build and push Docker image"

@@ -1,0 +1,175 @@
+name: Publish
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  lint-and-test:
+    name: Lint and Test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        component: [backend, frontend]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Backend setup
+      - name: Set up Go
+        if: matrix.component == 'backend'
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Cache Go modules
+        if: matrix.component == 'backend'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-go-${{ hashFiles('backend/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Install backend tools
+        if: matrix.component == 'backend'
+        working-directory: backend
+        run: make install-tools
+
+      - name: Backend lint and test
+        if: matrix.component == 'backend'
+        working-directory: backend
+        run: make check
+
+      # Frontend setup
+      - name: Set up Bun
+        if: matrix.component == 'frontend'
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install frontend dependencies
+        if: matrix.component == 'frontend'
+        working-directory: ui
+        run: bun install
+
+      - name: Frontend lint
+        if: matrix.component == 'frontend'
+        working-directory: ui
+        run: bun run check-only
+
+  build-and-push:
+    name: Build and Push Docker Image
+    needs: lint-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "📦 Building version: $VERSION"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ secrets.DOCKER_USERNAME }}/isoman
+          tags: |
+            type=semver,pattern={{version}}
+            type=raw,value=latest
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VERSION=${{ steps.version.outputs.version }}
+
+      - name: Extract custom title from tag
+        id: release_title
+        run: |
+          # Get tag annotation
+          TAG_MESSAGE=$(git tag -l --format='%(contents)' ${{ github.ref_name }})
+
+          # Check if tag contains custom title
+          if echo "$TAG_MESSAGE" | grep -q "CUSTOM_TITLE:"; then
+            TITLE=$(echo "$TAG_MESSAGE" | grep "CUSTOM_TITLE:" | sed 's/CUSTOM_TITLE: //')
+            echo "title=$TITLE" >> $GITHUB_OUTPUT
+            echo "has_custom_title=true" >> $GITHUB_OUTPUT
+          else
+            echo "title=Release ${{ github.ref_name }}" >> $GITHUB_OUTPUT
+            echo "has_custom_title=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ steps.release_title.outputs.title }}
+          generate_release_notes: true
+          body: |
+            ## 📦 Installation
+
+            ### Docker
+
+            Pull and run the latest version:
+            ```bash
+            docker pull ${{ secrets.DOCKER_USERNAME }}/isoman:${{ steps.version.outputs.version }}
+            docker run -d -p 8080:8080 -v isoman-data:/data ${{ secrets.DOCKER_USERNAME }}/isoman:${{ steps.version.outputs.version }}
+            ```
+
+            Or use the `latest` tag:
+            ```bash
+            docker pull ${{ secrets.DOCKER_USERNAME }}/isoman:latest
+            docker run -d -p 8080:8080 -v isoman-data:/data ${{ secrets.DOCKER_USERNAME }}/isoman:latest
+            ```
+
+            ### Docker Compose
+
+            Create a `docker-compose.yml` file:
+            ```yaml
+            version: '3.8'
+            services:
+              isoman:
+                image: ${{ secrets.DOCKER_USERNAME }}/isoman:${{ steps.version.outputs.version }}
+                ports:
+                  - "8080:8080"
+                volumes:
+                  - isoman-data:/data
+                environment:
+                  - LOG_LEVEL=info
+                restart: unless-stopped
+
+            volumes:
+              isoman-data:
+            ```
+
+            Then run:
+            ```bash
+            docker-compose up -d
+            ```
+
+            ---
+          draft: false
+          prerelease: false
