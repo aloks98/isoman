@@ -187,8 +187,8 @@ func TestDirectoryHandlerHiddenFilesSkipped(t *testing.T) {
 // TestFormatSize tests the formatSize function.
 func TestFormatSize(t *testing.T) {
 	tests := []struct {
-		expected string
 		bytes    int64
+		expected string
 	}{
 		{0, "0 B"},
 		{100, "100 B"},

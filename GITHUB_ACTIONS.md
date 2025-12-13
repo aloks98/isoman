@@ -38,7 +38,6 @@ The workflow intelligently runs jobs based on which files changed:
 3. **Backend Tests** (conditional)
    - Runs if backend files changed OR on push to master
    - Run all Go tests with race detector
-   - Upload coverage to Codecov (optional)
 
 4. **Frontend Lint** (conditional)
    - Runs if frontend files changed OR on push to master
@@ -145,7 +144,6 @@ Add the following secrets to your GitHub repository:
 |-------------|-------------|---------|
 | `DOCKER_USERNAME` | Your Docker Hub username | `johndoe` |
 | `DOCKER_TOKEN` | Docker Hub access token | `dckr_pat_abc123...` |
-| `CODECOV_TOKEN` | Codecov upload token (optional) | Get from https://codecov.io |
 
 ### 3. Enable GitHub Actions
 

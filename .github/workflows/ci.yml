@@ -104,14 +104,6 @@ jobs:
         working-directory: backend
         run: go test -v -race -coverprofile=coverage.out ./...
 
-      - name: Upload coverage
-        uses: codecov/codecov-action@v4
-        with:
-          files: backend/coverage.out
-          flags: backend
-          token: ${{ secrets.CODECOV_TOKEN }}
-        continue-on-error: true
-
   frontend-lint:
     name: Frontend Lint
     runs-on: ubuntu-latest
