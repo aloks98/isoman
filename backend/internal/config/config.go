@@ -1,68 +1,69 @@
 package config
 
 import (
-	"linux-iso-manager/internal/constants"
 	"strings"
 	"time"
+
+	"linux-iso-manager/internal/constants"
 
 	"github.com/spf13/viper"
 )
 
-// Config holds all application configuration
+// Config holds all application configuration.
 type Config struct {
-	Server   ServerConfig
-	Database DatabaseConfig
-	Download DownloadConfig
+	Log       LogConfig
+	Server    ServerConfig
+	Database  DatabaseConfig
+	Download  DownloadConfig
 	WebSocket WebSocketConfig
-	Log      LogConfig
 }
 
-// ServerConfig holds HTTP server configuration
+// ServerConfig holds HTTP server configuration.
 type ServerConfig struct {
 	Port            string
+	CORSOrigins     []string
 	ReadTimeout     time.Duration
 	WriteTimeout    time.Duration
 	IdleTimeout     time.Duration
 	ShutdownTimeout time.Duration
-	CORSOrigins     []string
 }
 
-// DatabaseConfig holds database configuration
+// DatabaseConfig holds database configuration.
 type DatabaseConfig struct {
 	Path            string
-	BusyTimeout     time.Duration
 	JournalMode     string
+	BusyTimeout     time.Duration
 	MaxOpenConns    int
 	MaxIdleConns    int
 	ConnMaxLifetime time.Duration
 	ConnMaxIdleTime time.Duration
 }
 
-// DownloadConfig holds download manager configuration
+// DownloadConfig holds download manager configuration.
 type DownloadConfig struct {
-	DataDir                string
-	WorkerCount            int
-	QueueBuffer            int
-	MaxRetries             int
-	RetryDelay             time.Duration
-	BufferSize             int
-	ProgressUpdateInterval time.Duration
+	DataDir                  string
+	WorkerCount              int
+	QueueBuffer              int
+	MaxRetries               int
+	RetryDelay               time.Duration
+	BufferSize               int
+	ProgressUpdateInterval   time.Duration
 	ProgressPercentThreshold int
-	CancellationWait       time.Duration
+	CancellationWait         time.Duration
 }
 
-// WebSocketConfig holds WebSocket configuration
+// WebSocketConfig holds WebSocket configuration.
 type WebSocketConfig struct {
 	BroadcastChannelSize int
 }
 
-// LogConfig holds logging configuration
+// LogConfig holds logging configuration.
 type LogConfig struct {
 	Level  string // debug, info, warn, error
 	Format string // json, text
 }
 
-// Load loads configuration from environment variables with defaults using Viper
+// Load loads configuration from environment variables with defaults using Viper.
 func Load() *Config {
 	v := viper.New()
 

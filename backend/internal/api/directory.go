@@ -17,18 +17,18 @@ import (
 //go:embed templates/directory.html
 var directoryTemplateContent string
 
-// FileInfo represents a file in the directory listing
+// FileInfo represents a file in the directory listing.
 type FileInfo struct {
+	ModifiedTime time.Time
 	Name         string
 	Size         string
-	SizeBytes    int64
 	Modified     string
-	ModifiedTime time.Time
-	IsDir        bool
 	Path         string
+	SizeBytes    int64
+	IsDir        bool
 }
 
-// DirectoryHandler serves Apache-style directory listing for /images/
+// DirectoryHandler serves Apache-style directory listing for /images/.
 func DirectoryHandler(isoDir string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Get the requested path (Gin includes leading slash in wildcard)
@@ -114,7 +114,7 @@ func DirectoryHandler(isoDir string) gin.HandlerFunc {
 	}
 }
 
-// formatSize converts bytes to human-readable format
+// formatSize converts bytes to human-readable format.
 func formatSize(bytes int64) string {
 	const unit = 1024
 	if bytes < unit {
@@ -128,7 +128,7 @@ func formatSize(bytes int64) string {
 	return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
 }
 
-// renderDirectoryListing renders the HTML directory listing
+// renderDirectoryListing renders the HTML directory listing.
 func renderDirectoryListing(c *gin.Context, path string, files []FileInfo) {
 	// Create template with custom functions
 	tmpl := template.Must(template.New("directory").Funcs(template.FuncMap{
@@ -156,7 +156,7 @@ func renderDirectoryListing(c *gin.Context, path string, files []FileInfo) {
 	tmpl.Execute(c.Writer, data)
 }
 
-// WalkDirectory recursively walks a directory and returns all files
+// WalkDirectory recursively walks a directory and returns all files.
 func WalkDirectory(root string) ([]FileInfo, error) {
 	var files []FileInfo
 
