@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to publish (e.g., v1.2.3)'
+        required: true
+        type: string
 
 jobs:
   lint-and-test:
@@ -15,6 +21,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
 
       # Backend setup
       - name: Set up Go
@@ -79,11 +87,18 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
 
       - name: Extract version from tag
         id: version
         run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
+          if [ -n "${{ github.event.inputs.tag }}" ]; then
+            TAG="${{ github.event.inputs.tag }}"
+          else
+            TAG="${GITHUB_REF#refs/tags/}"
+          fi
+          VERSION=${TAG#v}
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "📦 Building version: $VERSION"
 
@@ -120,8 +135,14 @@ jobs:
       - name: Extract custom title from tag
         id: release_title
         run: |
+          if [ -n "${{ github.event.inputs.tag }}" ]; then
+            TAG_NAME="${{ github.event.inputs.tag }}"
+          else
+            TAG_NAME="${{ github.ref_name }}"
+          fi
+
           # Get tag annotation
-          TAG_MESSAGE=$(git tag -l --format='%(contents)' ${{ github.ref_name }})
+          TAG_MESSAGE=$(git tag -l --format='%(contents)' "$TAG_NAME")
 
           # Check if tag contains custom title
           if echo "$TAG_MESSAGE" | grep -q "CUSTOM_TITLE:"; then
@@ -129,14 +150,15 @@ jobs:
             echo "title=$TITLE" >> $GITHUB_OUTPUT
             echo "has_custom_title=true" >> $GITHUB_OUTPUT
           else
-            echo "title=Release ${{ github.ref_name }}" >> $GITHUB_OUTPUT
+            echo "title=Release $TAG_NAME" >> $GITHUB_OUTPUT
             echo "has_custom_title=false" >> $GITHUB_OUTPUT
           fi
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ github.ref_name }}
+          tag_name: ${{ steps.release_title.outputs.tag_name }}
           name: ${{ steps.release_title.outputs.title }}
           generate_release_notes: true
           body: |

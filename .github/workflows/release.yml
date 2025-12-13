@@ -76,4 +76,11 @@ jobs:
 
           git push origin "v$VERSION"
           echo "✅ Created and pushed tag v$VERSION"
-          echo "🚀 Publish workflow will now build and push Docker image"
+
+      - name: Trigger publish workflow
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          gh workflow run publish.yml -f tag="v$VERSION"
+          echo "🚀 Triggered publish workflow for v$VERSION"
+        env:
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
