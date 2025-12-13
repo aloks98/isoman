@@ -1,8 +1,8 @@
 package api
 
 import (
-	"linux-iso-manager/internal/db"
-	"linux-iso-manager/internal/download"
+	"linux-iso-manager/internal/config"
+	"linux-iso-manager/internal/service"
 	"linux-iso-manager/internal/ws"
 
 	"github.com/gin-contrib/cors"
@@ -10,25 +10,21 @@ import (
 )
 
 // SetupRoutes configures all routes and middleware
-func SetupRoutes(database *db.DB, manager *download.Manager, isoDir string, wsHub *ws.Hub) *gin.Engine {
+func SetupRoutes(isoService *service.ISOService, isoDir string, wsHub *ws.Hub, cfg *config.Config) *gin.Engine {
 	// Set Gin to release mode for production (can be overridden by GIN_MODE env var)
 	// gin.SetMode(gin.ReleaseMode)
 
 	router := gin.Default()
 
 	// Configure CORS
-	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{
-		"http://localhost:3000",  // React dev server (npm/yarn)
-		"http://localhost:5173",  // Vite dev server (default)
-		"http://localhost:8080",  // Same origin
-	}
-	config.AllowMethods = []string{"GET", "POST", "DELETE", "OPTIONS"}
-	config.AllowHeaders = []string{"Origin", "Content-Type", "Accept"}
-	router.Use(cors.New(config))
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AllowOrigins = cfg.Server.CORSOrigins
+	corsConfig.AllowMethods = []string{"GET", "POST", "DELETE", "OPTIONS"}
+	corsConfig.AllowHeaders = []string{"Origin", "Content-Type", "Accept"}
+	router.Use(cors.New(corsConfig))
 
 	// Create handlers
-	handlers := NewHandlers(database, manager, isoDir)
+	handlers := NewHandlers(isoService, isoDir)
 
 	// API routes
 	api := router.Group("/api")

@@ -4,7 +4,7 @@ import (
 	"context"
 	"linux-iso-manager/internal/db"
 	"linux-iso-manager/internal/models"
-	"log"
+	"log/slog"
 	"sync"
 )
 
@@ -51,17 +51,17 @@ func (m *Manager) Start() {
 		m.wg.Add(1)
 		go m.worker(i)
 	}
-	log.Printf("Download manager started with %d workers", m.workerCount)
+	slog.Debug("download manager workers started", slog.Int("worker_count", m.workerCount))
 }
 
 // Stop gracefully shuts down the manager (safe to call multiple times)
 func (m *Manager) Stop() {
 	m.stopOnce.Do(func() {
-		log.Println("Stopping download manager...")
+		slog.Debug("stopping download manager")
 		m.cancel() // Cancel all ongoing downloads
 		close(m.shutdown)
 		m.wg.Wait()
-		log.Println("Download manager stopped")
+		slog.Debug("download manager stopped")
 	})
 }
 
@@ -79,11 +79,15 @@ func (m *Manager) worker(id int) {
 	for {
 		select {
 		case <-m.shutdown:
-			log.Printf("Worker %d shutting down", id)
+			slog.Debug("worker shutting down", slog.Int("worker_id", id))
 			return
 
 		case iso := <-m.queue:
-			log.Printf("Worker %d: Starting download of %s (ID: %s)", id, iso.Name, iso.ID)
+			slog.Info("worker starting download",
+				slog.Int("worker_id", id),
+				slog.String("name", iso.Name),
+				slog.String("iso_id", iso.ID),
+			)
 
 			// Create a child context that can be cancelled independently
 			downloadCtx, cancelDownload := context.WithCancel(m.ctx)
@@ -103,9 +107,16 @@ func (m *Manager) worker(id int) {
 			cancelDownload() // Clean up context resources
 
 			if err != nil {
-				log.Printf("Worker %d: Failed to download %s: %v", id, iso.Name, err)
+				slog.Error("worker download failed",
+					slog.Int("worker_id", id),
+					slog.String("name", iso.Name),
+					slog.Any("error", err),
+				)
 			} else {
-				log.Printf("Worker %d: Successfully completed %s", id, iso.Name)
+				slog.Info("worker download completed",
+					slog.Int("worker_id", id),
+					slog.String("name", iso.Name),
+				)
 			}
 		}
 	}

@@ -3,7 +3,7 @@ package ws
 import (
 	"encoding/json"
 	"linux-iso-manager/internal/models"
-	"log"
+	"log/slog"
 )
 
 // Message types for WebSocket communication
@@ -56,13 +56,13 @@ func (h *Hub) Run() {
 		select {
 		case client := <-h.register:
 			h.clients[client] = true
-			log.Printf("WebSocket client connected (total: %d)", len(h.clients))
+			slog.Debug("websocket client connected", slog.Int("total_clients", len(h.clients)))
 
 		case client := <-h.unregister:
 			if _, ok := h.clients[client]; ok {
 				delete(h.clients, client)
 				close(client.send)
-				log.Printf("WebSocket client disconnected (total: %d)", len(h.clients))
+				slog.Debug("websocket client disconnected", slog.Int("total_clients", len(h.clients)))
 			}
 
 		case message := <-h.broadcast:
@@ -96,7 +96,7 @@ func (h *Hub) BroadcastProgress(isoID string, progress int, status models.ISOSta
 	// Marshal to JSON
 	data, err := json.Marshal(message)
 	if err != nil {
-		log.Printf("Error marshaling progress message: %v", err)
+		slog.Error("failed to marshal progress message", slog.Any("error", err))
 		return
 	}
 
@@ -106,7 +106,7 @@ func (h *Hub) BroadcastProgress(isoID string, progress int, status models.ISOSta
 		// Message sent successfully
 	default:
 		// Broadcast channel is full, skip this update
-		log.Printf("Warning: Broadcast channel full, skipping update for ISO %s", isoID)
+		slog.Warn("broadcast channel full, skipping update", slog.String("iso_id", isoID))
 	}
 }
 

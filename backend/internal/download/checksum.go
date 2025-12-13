@@ -2,15 +2,18 @@ package download
 
 import (
 	"bufio"
+	"bytes"
+	"context"
 	"crypto/md5"
 	"crypto/sha256"
 	"crypto/sha512"
 	"fmt"
 	"hash"
 	"io"
-	"net/http"
+	"linux-iso-manager/internal/httputil"
 	"os"
 	"strings"
+	"time"
 )
 
 // ComputeHash computes the hash of a file using the specified hash type
@@ -46,17 +49,16 @@ func ComputeHash(filepath string, hashType string) (string, error) {
 // FetchExpectedChecksum downloads a checksum file and parses it to find the expected hash
 // for the given filename
 func FetchExpectedChecksum(checksumURL, filename string) (string, error) {
-	resp, err := http.Get(checksumURL)
+	// Use context with timeout for checksum download
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	data, err := httputil.FetchBytes(ctx, checksumURL)
 	if err != nil {
 		return "", fmt.Errorf("failed to fetch checksum file: %w", err)
 	}
-	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("checksum file download failed with status: %s", resp.Status)
-	}
-
-	return ParseChecksumFile(resp.Body, filename)
+	return ParseChecksumFile(bytes.NewReader(data), filename)
 }
 
 // ParseChecksumFile parses a checksum file to find the hash for the given filename

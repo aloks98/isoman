@@ -3,11 +3,12 @@ package download
 import (
 	"context"
 	"fmt"
-	"io"
 	"linux-iso-manager/internal/db"
+	"linux-iso-manager/internal/fileutil"
+	"linux-iso-manager/internal/httputil"
 	"linux-iso-manager/internal/models"
-	"log"
-	"net/http"
+	"linux-iso-manager/internal/pathutil"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"time"
@@ -38,26 +39,23 @@ func NewWorker(database *db.DB, isoDir string, callback ProgressCallback) *Worke
 // Process downloads and verifies an ISO
 func (w *Worker) Process(ctx context.Context, iso *models.ISO) error {
 	// Ensure tmp directory exists
-	if err := os.MkdirAll(w.tmpDir, 0755); err != nil {
+	if err := fileutil.EnsureDirectory(w.tmpDir); err != nil {
 		return fmt.Errorf("failed to create temp directory: %w", err)
 	}
 
 	// Use the computed FilePath for nested directory structure
 	// FilePath example: "alpine/3.19.1/x86_64/alpine-3.19.1-x86_64.iso"
-	tmpFile := filepath.Join(w.tmpDir, iso.Filename)
-	finalFile := filepath.Join(w.isoDir, iso.FilePath)
+	tmpFile := pathutil.ConstructTempPath(w.isoDir, iso.Filename)
+	finalFile := pathutil.ConstructISOPath(w.isoDir, iso.FilePath)
 
 	// Create the nested directory structure for the final file
-	finalDir := filepath.Dir(finalFile)
-	if err := os.MkdirAll(finalDir, 0755); err != nil {
+	if err := fileutil.EnsureParentDirectory(finalFile); err != nil {
 		return fmt.Errorf("failed to create final directory: %w", err)
 	}
 
 	// Clean up temp file on error
 	defer func() {
-		if _, err := os.Stat(tmpFile); err == nil {
-			os.Remove(tmpFile)
-		}
+		fileutil.DeleteFileSilently(tmpFile)
 	}()
 
 	// Update status to downloading
@@ -93,9 +91,12 @@ func (w *Worker) Process(ctx context.Context, iso *models.ISO) error {
 
 	// Download and save checksum file alongside ISO (after file is moved)
 	if iso.ChecksumURL != "" {
-		checksumFile := finalFile + "." + iso.ChecksumType
+		checksumFile := pathutil.ConstructChecksumPath(finalFile, iso.ChecksumType)
 		if err := w.downloadChecksumFile(iso.ChecksumURL, checksumFile); err != nil {
-			log.Printf("WARNING: Failed to save checksum file for %s: %v", iso.ID, err)
+			slog.Warn("failed to save checksum file",
+				slog.String("iso_id", iso.ID),
+				slog.Any("error", err),
+			)
 			// Don't fail the download if checksum file save fails
 		}
 	}
@@ -108,17 +109,27 @@ func (w *Worker) Process(ctx context.Context, iso *models.ISO) error {
 	iso.Progress = 100
 	iso.ErrorMessage = ""
 
-	// Retry UpdateISO if database is busy
+	// Update database to mark as complete (with retry for database busy errors)
 	maxRetries := 5
+	var lastErr error
 	for i := 0; i < maxRetries; i++ {
-		if err := w.db.UpdateISO(iso); err != nil {
-			if i < maxRetries-1 {
-				time.Sleep(100 * time.Millisecond)
-				continue
-			}
-			log.Printf("ERROR: Failed to update ISO %s to complete after %d retries: %v", iso.ID, maxRetries, err)
+		lastErr = w.db.UpdateISO(iso)
+		if lastErr == nil {
+			break // Success
 		}
-		break
+
+		if i < maxRetries-1 {
+			time.Sleep(100 * time.Millisecond)
+		}
+	}
+
+	if lastErr != nil {
+		slog.Error("failed to update ISO to complete status",
+			slog.String("iso_id", iso.ID),
+			slog.Int("retries", maxRetries),
+			slog.Any("error", lastErr),
+		)
+		// Don't return error since download itself succeeded
 	}
 
 	return nil
@@ -126,78 +137,34 @@ func (w *Worker) Process(ctx context.Context, iso *models.ISO) error {
 
 // download downloads the ISO file with progress tracking
 func (w *Worker) download(ctx context.Context, iso *models.ISO, destPath string) error {
-	// Create HTTP request with context
-	req, err := http.NewRequestWithContext(ctx, "GET", iso.DownloadURL, nil)
-	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
-	}
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("failed to start download: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("download failed with status: %s", resp.Status)
-	}
-
-	// Get content length and update database
-	contentLength := resp.ContentLength
-	if contentLength > 0 {
-		w.db.UpdateISOSize(iso.ID, contentLength)
-		iso.SizeBytes = contentLength
-	}
-
-	// Create destination file
-	out, err := os.Create(destPath)
-	if err != nil {
-		return fmt.Errorf("failed to create file: %w", err)
-	}
-	defer out.Close()
-
-	// Download with progress tracking
-	var downloaded int64
+	// Use httputil to download with progress tracking
 	lastProgress := -1
 	lastUpdate := time.Now()
-	buf := make([]byte, 32*1024) // 32KB buffer
 
-	for {
-		// Check if context is cancelled
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
+	err := httputil.DownloadFileWithProgress(ctx, iso.DownloadURL, destPath, 32*1024, func(downloaded, total int64) {
+		// Update database with total size on first callback
+		if iso.SizeBytes == 0 && total > 0 {
+			w.db.UpdateISOSize(iso.ID, total)
+			iso.SizeBytes = total
 		}
 
-		n, err := resp.Body.Read(buf)
-		if n > 0 {
-			if _, writeErr := out.Write(buf[:n]); writeErr != nil {
-				return fmt.Errorf("failed to write to file: %w", writeErr)
-			}
-			downloaded += int64(n)
-
-			// Calculate progress
-			var progress int
-			if contentLength > 0 {
-				progress = int((downloaded * 100) / contentLength)
-			}
-
-			// Update progress every 1% or every second
-			now := time.Now()
-			if progress != lastProgress && (progress-lastProgress >= 1 || now.Sub(lastUpdate) >= time.Second) {
-				w.updateStatus(iso.ID, models.StatusDownloading, progress, "")
-				lastProgress = progress
-				lastUpdate = now
-			}
+		// Calculate progress
+		var progress int
+		if total > 0 {
+			progress = int((downloaded * 100) / total)
 		}
 
-		if err == io.EOF {
-			break
+		// Update progress every 1% or every second
+		now := time.Now()
+		if progress != lastProgress && (progress-lastProgress >= 1 || now.Sub(lastUpdate) >= time.Second) {
+			w.updateStatus(iso.ID, models.StatusDownloading, progress, "")
+			lastProgress = progress
+			lastUpdate = now
 		}
-		if err != nil {
-			return fmt.Errorf("download error: %w", err)
-		}
+	})
+
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -245,27 +212,9 @@ func (w *Worker) updateStatus(isoID string, status models.ISOStatus, progress in
 
 // downloadChecksumFile downloads the checksum file and saves it
 func (w *Worker) downloadChecksumFile(checksumURL, destPath string) error {
-	resp, err := http.Get(checksumURL)
-	if err != nil {
-		return fmt.Errorf("failed to fetch checksum file: %w", err)
-	}
-	defer resp.Body.Close()
+	// Use context with timeout for checksum download
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("checksum file download failed with status: %s", resp.Status)
-	}
-
-	// Create destination file
-	out, err := os.Create(destPath)
-	if err != nil {
-		return fmt.Errorf("failed to create checksum file: %w", err)
-	}
-	defer out.Close()
-
-	// Copy content to file
-	if _, err := io.Copy(out, resp.Body); err != nil {
-		return fmt.Errorf("failed to write checksum file: %w", err)
-	}
-
-	return nil
+	return httputil.DownloadFile(ctx, checksumURL, destPath)
 }

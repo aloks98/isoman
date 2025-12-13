@@ -1,6 +1,6 @@
 package download
 
-import "log"
+import "log/slog"
 
 // CancelDownload cancels an ongoing download by ISO ID
 // Returns true if a download was cancelled, false if no download was active
@@ -9,7 +9,7 @@ func (m *Manager) CancelDownload(isoID string) bool {
 	defer m.mu.Unlock()
 
 	if cancel, exists := m.activeDownloads[isoID]; exists {
-		log.Printf("Cancelling download for ISO %s", isoID)
+		slog.Info("cancelling download", slog.String("iso_id", isoID))
 		cancel()
 		delete(m.activeDownloads, isoID)
 		return true

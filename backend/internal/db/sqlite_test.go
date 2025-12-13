@@ -1,6 +1,7 @@
 package db
 
 import (
+	"linux-iso-manager/internal/config"
 	"linux-iso-manager/internal/models"
 	"os"
 	"path/filepath"
@@ -17,7 +18,10 @@ func setupTestDB(t *testing.T) (*DB, func()) {
 	tmpDir := t.TempDir()
 	dbPath := filepath.Join(tmpDir, "test.db")
 
-	db, err := New(dbPath)
+	// Use default config for tests
+	cfg := config.Load()
+
+	db, err := New(dbPath, &cfg.Database)
 	if err != nil {
 		t.Fatalf("Failed to create test database: %v", err)
 	}
@@ -53,7 +57,10 @@ func TestNew(t *testing.T) {
 	tmpDir := t.TempDir()
 	dbPath := filepath.Join(tmpDir, "test.db")
 
-	db, err := New(dbPath)
+	// Use default config for tests
+	cfg := config.Load()
+
+	db, err := New(dbPath, &cfg.Database)
 	if err != nil {
 		t.Fatalf("New() failed: %v", err)
 	}

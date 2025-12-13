@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"linux-iso-manager/internal/config"
 	"linux-iso-manager/internal/db"
 	"linux-iso-manager/internal/models"
 	"net/http"
@@ -25,7 +26,11 @@ func setupTestWorker(t *testing.T) (*Worker, *db.DB, string, func()) {
 
 	// Create test database
 	dbPath := filepath.Join(tmpDir, "test.db")
-	database, err := db.New(dbPath)
+
+	// Use default config for tests
+	cfg := config.Load()
+
+	database, err := db.New(dbPath, &cfg.Database)
 	if err != nil {
 		t.Fatalf("Failed to create test database: %v", err)
 	}

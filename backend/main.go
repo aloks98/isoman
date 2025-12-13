@@ -2,103 +2,106 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
-	"path/filepath"
-	"strconv"
 	"syscall"
-	"time"
 
 	"linux-iso-manager/internal/api"
+	"linux-iso-manager/internal/config"
 	"linux-iso-manager/internal/db"
 	"linux-iso-manager/internal/download"
+	"linux-iso-manager/internal/fileutil"
+	"linux-iso-manager/internal/logger"
 	"linux-iso-manager/internal/models"
+	"linux-iso-manager/internal/pathutil"
+	"linux-iso-manager/internal/service"
 	"linux-iso-manager/internal/ws"
 )
 
 func main() {
-	fmt.Println("=== ISO Manager - Starting Server ===")
-	fmt.Println()
-
 	// Load configuration from environment variables
-	port := getEnv("PORT", "8080")
-	dataDir := getEnv("DATA_DIR", "./data")
-	workerCount := getEnvInt("WORKER_COUNT", 2)
+	cfg := config.Load()
+
+	// Initialize structured logger
+	log := logger.New(cfg.Log.Level, cfg.Log.Format)
+	slog.SetDefault(log)
+
+	log.Info("starting ISO Manager server",
+		slog.String("log_level", cfg.Log.Level),
+		slog.String("log_format", cfg.Log.Format),
+	)
 
 	// Create directory structure
-	isoDir := filepath.Join(dataDir, "isos")
-	dbDir := filepath.Join(dataDir, "db")
-	tmpDir := filepath.Join(isoDir, ".tmp")
+	isoDir := pathutil.GetISODir(cfg.Download.DataDir)
+	dbDir := pathutil.GetDBDir(cfg.Download.DataDir)
+	tmpDir := pathutil.GetTempDir(isoDir)
 
-	for _, dir := range []string{isoDir, dbDir, tmpDir} {
-		if err := os.MkdirAll(dir, 0755); err != nil {
-			log.Fatalf("Failed to create directory %s: %v", dir, err)
-		}
+	if err := fileutil.EnsureDirectories(isoDir, dbDir, tmpDir); err != nil {
+		log.Error("failed to create directories", slog.Any("error", err))
+		os.Exit(1)
 	}
-	fmt.Printf("✓ Directories initialized (data: %s)\n", dataDir)
+	log.Info("directories initialized", slog.String("data_dir", cfg.Download.DataDir))
 
 	// Initialize database
-	dbPath := filepath.Join(dbDir, "isos.db")
-	database, err := db.New(dbPath)
+	dbPath := pathutil.GetDBPath(cfg.Download.DataDir)
+	database, err := db.New(dbPath, &cfg.Database)
 	if err != nil {
-		log.Fatalf("Failed to initialize database: %v", err)
+		log.Error("failed to initialize database", slog.Any("error", err))
+		os.Exit(1)
 	}
 	defer database.Close()
-	fmt.Printf("✓ Database initialized (%s)\n", dbPath)
+	log.Info("database initialized", slog.String("db_path", dbPath))
 
 	// Initialize WebSocket hub
 	wsHub := ws.NewHub()
 	go wsHub.Run()
-	fmt.Println("✓ WebSocket hub started")
+	log.Info("websocket hub started")
 
 	// Initialize download manager with progress callback
-	manager := download.NewManager(database, isoDir, workerCount)
+	manager := download.NewManager(database, isoDir, cfg.Download.WorkerCount)
 	manager.SetProgressCallback(func(isoID string, progress int, status models.ISOStatus) {
 		// Broadcast progress to WebSocket clients
 		wsHub.BroadcastProgress(isoID, progress, status)
 
-		// Also log to console
-		log.Printf("[%s] Progress: %d%%, Status: %s", isoID[:8], progress, status)
+		// Also log progress
+		log.Debug("download progress",
+			slog.String("iso_id", isoID),
+			slog.Int("progress", progress),
+			slog.String("status", string(status)),
+		)
 	})
 	manager.Start()
-	fmt.Printf("✓ Download manager started (%d workers)\n", workerCount)
+	log.Info("download manager started", slog.Int("worker_count", cfg.Download.WorkerCount))
+
+	// Initialize ISO service
+	isoService := service.NewISOService(database, manager)
+	log.Info("iso service initialized")
 
 	// Setup routes
-	router := api.SetupRoutes(database, manager, isoDir, wsHub)
-	fmt.Println("✓ API routes configured")
+	router := api.SetupRoutes(isoService, isoDir, wsHub, cfg)
+	log.Info("api routes configured")
 
 	// Create HTTP server
 	server := &http.Server{
-		Addr:         ":" + port,
+		Addr:         ":" + cfg.Server.Port,
 		Handler:      router,
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
-		IdleTimeout:  60 * time.Second,
+		ReadTimeout:  cfg.Server.ReadTimeout,
+		WriteTimeout: cfg.Server.WriteTimeout,
+		IdleTimeout:  cfg.Server.IdleTimeout,
 	}
 
 	// Start server in a goroutine
 	go func() {
-		fmt.Println()
-		fmt.Printf("🚀 Server listening on http://localhost:%s\n", port)
-		fmt.Println()
-		fmt.Println("API Endpoints:")
-		fmt.Printf("  - GET    /api/isos           List all ISOs\n")
-		fmt.Printf("  - POST   /api/isos           Create new ISO download\n")
-		fmt.Printf("  - GET    /api/isos/:id       Get ISO by ID\n")
-		fmt.Printf("  - DELETE /api/isos/:id       Delete ISO\n")
-		fmt.Printf("  - POST   /api/isos/:id/retry Retry failed download\n")
-		fmt.Printf("  - GET    /images/            Directory listing\n")
-		fmt.Printf("  - GET    /ws                 WebSocket connection\n")
-		fmt.Printf("  - GET    /health             Health check\n")
-		fmt.Println()
-		fmt.Println("Press Ctrl+C to shutdown")
-		fmt.Println()
+		log.Info("server starting",
+			slog.String("address", ":"+cfg.Server.Port),
+			slog.String("url", "http://localhost:"+cfg.Server.Port),
+		)
 
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Server failed to start: %v", err)
+			log.Error("server failed to start", slog.Any("error", err))
+			os.Exit(1)
 		}
 	}()
 
@@ -107,39 +110,20 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	fmt.Println("\n\n⚠️  Shutdown signal received!")
-	fmt.Println("Shutting down gracefully...")
+	log.Info("shutdown signal received, starting graceful shutdown")
 
 	// Stop download manager (cancels active downloads)
-	fmt.Println("  - Stopping download manager...")
+	log.Info("stopping download manager")
 	manager.Stop()
 
 	// Shutdown HTTP server with timeout
-	fmt.Println("  - Stopping HTTP server...")
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	log.Info("stopping http server")
+	ctx, cancel := context.WithTimeout(context.Background(), cfg.Server.ShutdownTimeout)
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
-		log.Printf("Server forced to shutdown: %v", err)
+		log.Warn("server forced to shutdown", slog.Any("error", err))
 	}
 
-	fmt.Println("✓ Server stopped successfully")
-}
-
-// getEnv returns environment variable value or default
-func getEnv(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return defaultValue
-}
-
-// getEnvInt returns environment variable as int or default
-func getEnvInt(key string, defaultValue int) int {
-	if value := os.Getenv(key); value != "" {
-		if intValue, err := strconv.Atoi(value); err == nil {
-			return intValue
-		}
-	}
-	return defaultValue
+	log.Info("server stopped successfully")
 }

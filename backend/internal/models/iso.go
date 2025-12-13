@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"linux-iso-manager/internal/constants"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -18,12 +19,6 @@ const (
 	StatusComplete    ISOStatus = "complete"
 	StatusFailed      ISOStatus = "failed"
 )
-
-// Supported file types for virtual machine images
-var SupportedFileTypes = []string{
-	"iso", "qcow2", "vmdk", "vdi",
-	"img", "raw", "vhd", "vhdx",
-}
 
 // ISO represents an ISO file record in the database
 type ISO struct {
@@ -89,13 +84,11 @@ func DetectFileType(url string) (string, error) {
 	ext = strings.ToLower(strings.TrimPrefix(ext, "."))
 
 	// Check if supported
-	for _, supported := range SupportedFileTypes {
-		if ext == supported {
-			return ext, nil
-		}
+	if !constants.IsSupportedFileType(ext) {
+		return "", fmt.Errorf("unsupported file type: %s (supported: %v)", ext, constants.SupportedFileTypes)
 	}
 
-	return "", fmt.Errorf("unsupported file type: %s (supported: %v)", ext, SupportedFileTypes)
+	return ext, nil
 }
 
 // GenerateFilename creates a filename from components

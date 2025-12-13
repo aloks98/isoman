@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"linux-iso-manager/internal/config"
 	"linux-iso-manager/internal/db"
 	"linux-iso-manager/internal/download"
 	"linux-iso-manager/internal/models"
+	"linux-iso-manager/internal/service"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -27,7 +29,11 @@ func setupTestHandlers(t *testing.T) (*Handlers, *db.DB, *download.Manager, stri
 
 	// Create test database
 	dbPath := filepath.Join(tmpDir, "test.db")
-	database, err := db.New(dbPath)
+
+	// Use default config for tests
+	cfg := config.Load()
+
+	database, err := db.New(dbPath, &cfg.Database)
 	if err != nil {
 		t.Fatalf("Failed to create test database: %v", err)
 	}
@@ -35,8 +41,11 @@ func setupTestHandlers(t *testing.T) (*Handlers, *db.DB, *download.Manager, stri
 	// Create download manager (but don't start it for most tests)
 	manager := download.NewManager(database, isoDir, 1)
 
+	// Create ISO service
+	isoService := service.NewISOService(database, manager)
+
 	// Create handlers
-	handlers := NewHandlers(database, manager, isoDir)
+	handlers := NewHandlers(isoService, isoDir)
 
 	cleanup := func() {
 		manager.Stop()
