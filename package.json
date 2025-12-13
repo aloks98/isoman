@@ -1,0 +1,17 @@
+{
+  "name": "isoman",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^15.3.0"
+  },
+  "lint-staged": {
+    "backend/**/*.go": "make -C backend fmt",
+    "ui/**/*.{ts,tsx,js,jsx,json,css}": "cd ui && bun run check"
+  }
+}
