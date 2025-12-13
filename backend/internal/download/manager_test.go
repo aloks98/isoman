@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
@@ -205,10 +206,13 @@ func TestManagerProgressCallback(t *testing.T) {
 	manager, database, _, cleanup := setupTestManager(t, 1)
 	defer cleanup()
 
-	// Track progress callbacks
+	// Track progress callbacks with mutex protection
+	var mu sync.Mutex
 	progressCalls := 0
 	var lastStatus models.ISOStatus
 	manager.SetProgressCallback(func(isoID string, progress int, status models.ISOStatus) {
+		mu.Lock()
+		defer mu.Unlock()
 		progressCalls++
 		lastStatus = status
 	})
@@ -246,12 +250,17 @@ func TestManagerProgressCallback(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	// Verify we got progress callbacks
-	if progressCalls == 0 {
+	mu.Lock()
+	calls := progressCalls
+	status := lastStatus
+	mu.Unlock()
+
+	if calls == 0 {
 		t.Error("Expected progress callbacks, got none")
 	}
 
-	if lastStatus != models.StatusComplete {
-		t.Errorf("Last status should be 'complete', got: %s", lastStatus)
+	if status != models.StatusComplete {
+		t.Errorf("Last status should be 'complete', got: %s", status)
 	}
 }
 

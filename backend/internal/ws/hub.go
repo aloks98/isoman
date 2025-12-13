@@ -3,6 +3,7 @@ package ws
 import (
 	"encoding/json"
 	"log/slog"
+	"sync"
 
 	"linux-iso-manager/internal/models"
 )
@@ -31,6 +32,9 @@ type Hub struct {
 	// Registered clients
 	clients map[*Client]bool
 
+	// Protects clients map for concurrent read access
+	mu sync.RWMutex
+
 	// Inbound messages from clients
 	broadcast chan []byte
 
@@ -56,18 +60,27 @@ func (h *Hub) Run() {
 	for {
 		select {
 		case client := <-h.register:
+			h.mu.Lock()
 			h.clients[client] = true
-			slog.Debug("websocket client connected", slog.Int("total_clients", len(h.clients)))
+			count := len(h.clients)
+			h.mu.Unlock()
+			slog.Debug("websocket client connected", slog.Int("total_clients", count))
 
 		case client := <-h.unregister:
+			h.mu.Lock()
 			if _, ok := h.clients[client]; ok {
 				delete(h.clients, client)
 				close(client.send)
-				slog.Debug("websocket client disconnected", slog.Int("total_clients", len(h.clients)))
+				count := len(h.clients)
+				h.mu.Unlock()
+				slog.Debug("websocket client disconnected", slog.Int("total_clients", count))
+			} else {
+				h.mu.Unlock()
 			}
 
 		case message := <-h.broadcast:
 			// Broadcast to all connected clients
+			h.mu.Lock()
 			for client := range h.clients {
 				select {
 				case client.send <- message:
@@ -77,6 +90,7 @@ func (h *Hub) Run() {
 					delete(h.clients, client)
 				}
 			}
+			h.mu.Unlock()
 		}
 	}
 }
@@ -113,5 +127,7 @@ func (h *Hub) BroadcastProgress(isoID string, progress int, status models.ISOSta
 
 // ClientCount returns the number of connected clients.
 func (h *Hub) ClientCount() int {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
 	return len(h.clients)
 }
