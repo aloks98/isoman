@@ -47,6 +47,20 @@ export interface CreateISORequest {
 }
 
 /**
+ * Request payload for updating an existing ISO
+ * All fields are optional - only changed fields need to be sent
+ */
+export interface UpdateISORequest {
+  name?: string;
+  version?: string;
+  arch?: string;
+  edition?: string;
+  download_url?: string;
+  checksum_url?: string;
+  checksum_type?: 'sha256' | 'sha512' | 'md5';
+}
+
+/**
  * Uniform API response structure
  */
 export interface APIResponse<T = unknown> {

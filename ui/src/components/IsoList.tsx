@@ -26,6 +26,7 @@ interface IsoListProps {
   onCreateISO: (request: CreateISORequest) => Promise<void>;
   onDeleteISO: (id: string) => void;
   onRetryISO: (id: string) => void;
+  onEditISO: (iso: ISO) => void;
 }
 
 export function IsoList({
@@ -37,6 +38,7 @@ export function IsoList({
   onCreateISO,
   onDeleteISO,
   onRetryISO,
+  onEditISO,
 }: IsoListProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isoToDelete, setIsoToDelete] = useState<ISO | null>(null);
@@ -130,11 +132,17 @@ export function IsoList({
               iso={iso}
               onDelete={handleDelete}
               onRetry={onRetryISO}
+              onEdit={onEditISO}
             />
           ))}
         </div>
       ) : (
-        <IsoListView isos={isos} onDelete={handleDelete} onRetry={onRetryISO} />
+        <IsoListView
+          isos={isos}
+          onDelete={handleDelete}
+          onRetry={onRetryISO}
+          onEdit={onEditISO}
+        />
       )}
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

@@ -1,4 +1,9 @@
-import type { APIResponse, CreateISORequest, ISO } from '../types/iso';
+import type {
+  APIResponse,
+  CreateISORequest,
+  ISO,
+  UpdateISORequest,
+} from '../types/iso';
 
 /**
  * Base API URL - defaults to same origin in production
@@ -88,6 +93,23 @@ export async function retryISO(id: string): Promise<ISO> {
   });
   if (!response.data) {
     throw new Error('Failed to retry ISO');
+  }
+  return response.data;
+}
+
+/**
+ * Update an existing ISO
+ */
+export async function updateISO(
+  id: string,
+  request: UpdateISORequest,
+): Promise<ISO> {
+  const response = await apiFetch<ISO>(`/api/isos/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(request),
+  });
+  if (!response.data) {
+    throw new Error('Failed to update ISO');
   }
   return response.data;
 }

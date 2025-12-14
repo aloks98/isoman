@@ -59,7 +59,7 @@ func SetupRoutes(isoService *service.ISOService, isoDir string, wsHub *ws.Hub, c
 	router.Static("/static", frontendPath+"/static")
 
 	// Serve favicon
-	router.StaticFile("/favicon.png", frontendPath+"/favicon.png")
+	router.StaticFile("/favicon.svg", frontendPath+"/favicon.svg")
 
 	// Serve index.html for root and all other routes (for React Router)
 	router.NoRoute(func(c *gin.Context) {

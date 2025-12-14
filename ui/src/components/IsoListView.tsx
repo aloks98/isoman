@@ -14,6 +14,7 @@ import {
   Check,
   Copy,
   Download,
+  Edit,
   ExternalLink,
   MoreVertical,
   RefreshCw,
@@ -39,9 +40,10 @@ interface IsoListViewProps {
   isos: ISO[];
   onDelete: (id: string) => void;
   onRetry: (id: string) => void;
+  onEdit: (iso: ISO) => void;
 }
 
-export function IsoListView({ isos, onDelete, onRetry }: IsoListViewProps) {
+export function IsoListView({ isos, onDelete, onRetry, onEdit }: IsoListViewProps) {
   const { copyToClipboard, copiedKey } = useCopyWithFeedback();
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -248,6 +250,10 @@ export function IsoListView({ isos, onDelete, onRetry }: IsoListViewProps) {
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => onEdit(iso)}>
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit
+                  </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <a
                       href={iso.download_url}
@@ -272,7 +278,7 @@ export function IsoListView({ isos, onDelete, onRetry }: IsoListViewProps) {
         },
       },
     ],
-    [copiedKey, onDelete, onRetry, copyToClipboard],
+    [copiedKey, onDelete, onRetry, onEdit, copyToClipboard],
   );
 
   const table = useReactTable({

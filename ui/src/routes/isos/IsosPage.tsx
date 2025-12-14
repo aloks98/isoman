@@ -1,13 +1,27 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
+import { EditIsoModal } from '@/components/EditIsoModal';
 import { IsoList } from '@/components/IsoList';
 import { useWebSocket } from '@/hooks/useWebSocket';
-import { createISO, deleteISO, listISOs, retryISO } from '@/lib/api';
+import {
+  createISO,
+  deleteISO,
+  listISOs,
+  retryISO,
+  updateISO,
+} from '@/lib/api';
 import { useAppStore } from '@/stores';
-import type { CreateISORequest, ISO, WSProgressMessage } from '@/types/iso';
+import type {
+  CreateISORequest,
+  ISO,
+  UpdateISORequest,
+  WSProgressMessage,
+} from '@/types/iso';
 
 export function IsosPage() {
   const queryClient = useQueryClient();
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [isoToEdit, setIsoToEdit] = useState<ISO | null>(null);
 
   // Get UI state from Zustand
   const viewMode = useAppStore((state) => state.viewMode);
@@ -82,6 +96,15 @@ export function IsosPage() {
     },
   });
 
+  // Update mutation
+  const updateMutation = useMutation({
+    mutationFn: ({ id, request }: { id: string; request: UpdateISORequest }) =>
+      updateISO(id, request),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['isos'] });
+    },
+  });
+
   const handleCreate = async (request: CreateISORequest) => {
     await createMutation.mutateAsync(request);
   };
@@ -94,16 +117,36 @@ export function IsosPage() {
     retryMutation.mutate(id);
   };
 
+  const handleEdit = (iso: ISO) => {
+    setIsoToEdit(iso);
+    setEditModalOpen(true);
+  };
+
+  const handleUpdate = async (id: string, request: UpdateISORequest) => {
+    await updateMutation.mutateAsync({ id, request });
+  };
+
   return (
-    <IsoList
-      isos={isos}
-      isLoading={isLoading}
-      error={error as Error | null}
-      viewMode={viewMode}
-      onViewModeChange={setViewMode}
-      onCreateISO={handleCreate}
-      onDeleteISO={handleDelete}
-      onRetryISO={handleRetry}
-    />
+    <>
+      <IsoList
+        isos={isos}
+        isLoading={isLoading}
+        error={error as Error | null}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        onCreateISO={handleCreate}
+        onDeleteISO={handleDelete}
+        onRetryISO={handleRetry}
+        onEditISO={handleEdit}
+      />
+      {isoToEdit && (
+        <EditIsoModal
+          iso={isoToEdit}
+          open={editModalOpen}
+          onOpenChange={setEditModalOpen}
+          onSubmit={handleUpdate}
+        />
+      )}
+    </>
   );
 }

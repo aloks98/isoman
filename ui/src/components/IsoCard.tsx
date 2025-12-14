@@ -2,6 +2,7 @@ import {
   Check,
   Copy,
   Download,
+  Edit,
   ExternalLink,
   MoreVertical,
   RefreshCw,
@@ -26,9 +27,10 @@ interface IsoCardProps {
   iso: ISO;
   onDelete: (id: string) => void;
   onRetry: (id: string) => void;
+  onEdit: (iso: ISO) => void;
 }
 
-export function IsoCard({ iso, onDelete, onRetry }: IsoCardProps) {
+export function IsoCard({ iso, onDelete, onRetry, onEdit }: IsoCardProps) {
   const { copyToClipboard, copiedKey } = useCopyWithFeedback();
   const checksumUrl = getFullChecksumUrl(iso.download_link, iso.checksum_type);
   const downloadUrl = getFullDownloadUrl(iso.download_link);
@@ -64,6 +66,12 @@ export function IsoCard({ iso, onDelete, onRetry }: IsoCardProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            {iso.status === 'complete' && (
+              <DropdownMenuItem onClick={() => onEdit(iso)}>
+                <Edit className="w-4 h-4 mr-2" />
+                Edit
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem asChild>
               <a
                 href={iso.download_url}
@@ -148,10 +156,20 @@ export function IsoCard({ iso, onDelete, onRetry }: IsoCardProps) {
               </Button>
             )}
             {iso.status === 'failed' && (
-              <Button onClick={() => onRetry(iso.id)} className="flex-1">
-                <RefreshCw />
-                Retry
-              </Button>
+              <>
+                <Button onClick={() => onRetry(iso.id)} className="flex-1">
+                  <RefreshCw />
+                  Retry
+                </Button>
+                <Button
+                  onClick={() => onEdit(iso)}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  <Edit />
+                  Edit & Retry
+                </Button>
+              </>
             )}
           </div>
           {iso.status === 'complete' && (

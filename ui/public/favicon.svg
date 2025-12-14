@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <!-- Define the segments as paths -->
+    <g id="disc">
+      <!-- Outer black ring -->
+      <circle cx="50" cy="50" r="48" fill="none" stroke="#000" stroke-width="2"/>
+
+      <!-- Colored segments (12 segments total) -->
+      <!-- Segment 1 - Purple -->
+      <path d="M 50 50 L 50 2 A 48 48 0 0 1 68.9 6.1 Z" fill="#4c1d95" stroke="#000" stroke-width="0.5"/>
+
+      <!-- Segment 2 - Red -->
+      <path d="M 50 50 L 68.9 6.1 A 48 48 0 0 1 84.9 15.1 Z" fill="#dc2626" stroke="#000" stroke-width="0.5"/>
+
+      <!-- Segment 3 - Orange -->
+      <path d="M 50 50 L 84.9 15.1 A 48 48 0 0 1 93.9 31.1 Z" fill="#ea580c" stroke="#000" stroke-width="0.5"/>
+
+      <!-- Segment 4 - Yellow -->
+      <path d="M 50 50 L 93.9 31.1 A 48 48 0 0 1 98 50 Z" fill="#eab308" stroke="#000" stroke-width="0.5"/>
+
+      <!-- Segment 5 - Green -->
+      <path d="M 50 50 L 98 50 A 48 48 0 0 1 93.9 68.9 Z" fill="#16a34a" stroke="#000" stroke-width="0.5"/>
+
+      <!-- Segment 6 - Teal -->
+      <path d="M 50 50 L 93.9 68.9 A 48 48 0 0 1 84.9 84.9 Z" fill="#0d9488" stroke="#000" stroke-width="0.5"/>
+
+      <!-- Segment 7 - Blue -->
+      <path d="M 50 50 L 84.9 84.9 A 48 48 0 0 1 68.9 93.9 Z" fill="#2563eb" stroke="#000" stroke-width="0.5"/>
+
+      <!-- Segment 8 - Light Gray/Beige -->
+      <path d="M 50 50 L 68.9 93.9 A 48 48 0 0 1 50 98 Z" fill="#d6d3d1" stroke="#000" stroke-width="0.5"/>
+
+      <!-- Segment 9 - Beige -->
+      <path d="M 50 50 L 50 98 A 48 48 0 0 1 31.1 93.9 Z" fill="#d4b896" stroke="#000" stroke-width="0.5"/>
+
+      <!-- Segment 10 - Light Blue -->
+      <path d="M 50 50 L 31.1 93.9 A 48 48 0 0 1 15.1 84.9 Z" fill="#60a5fa" stroke="#000" stroke-width="0.5"/>
+
+      <!-- Segment 11 - Gray/White -->
+      <path d="M 50 50 L 15.1 84.9 A 48 48 0 0 1 6.1 68.9 Z" fill="#e5e5e5" stroke="#000" stroke-width="0.5"/>
+
+      <!-- Segment 12 - Cream/Beige -->
+      <path d="M 50 50 L 6.1 68.9 A 48 48 0 0 1 2 50 Z" fill="#e7d4b8" stroke="#000" stroke-width="0.5"/>
+
+      <!-- Segment 13 - Light Gray -->
+      <path d="M 50 50 L 2 50 A 48 48 0 0 1 6.1 31.1 Z" fill="#d1d5db" stroke="#000" stroke-width="0.5"/>
+
+      <!-- Segment 14 - Light Beige -->
+      <path d="M 50 50 L 6.1 31.1 A 48 48 0 0 1 15.1 15.1 Z" fill="#d4b896" stroke="#000" stroke-width="0.5"/>
+
+      <!-- Segment 15 - Gray -->
+      <path d="M 50 50 L 15.1 15.1 A 48 48 0 0 1 31.1 6.1 Z" fill="#e5e5e5" stroke="#000" stroke-width="0.5"/>
+
+      <!-- Segment 16 - Light Purple/Gray -->
+      <path d="M 50 50 L 31.1 6.1 A 48 48 0 0 1 50 2 Z" fill="#9ca3af" stroke="#000" stroke-width="0.5"/>
+
+      <!-- Center black circle (CD hole) -->
+      <circle cx="50" cy="50" r="22" fill="#1f2937" stroke="#000" stroke-width="1.5"/>
+
+      <!-- Inner rings for CD effect -->
+      <circle cx="50" cy="50" r="18" fill="none" stroke="#4b5563" stroke-width="1"/>
+      <circle cx="50" cy="50" r="14" fill="none" stroke="#6b7280" stroke-width="0.8"/>
+
+      <!-- Center hole -->
+      <circle cx="50" cy="50" r="8" fill="#f9fafb" stroke="#374151" stroke-width="0.8"/>
+
+      <!-- Reflection lines for realistic CD look -->
+      <path d="M 30 15 Q 35 10, 45 12" fill="none" stroke="#fff" stroke-width="1.5" opacity="0.4" stroke-linecap="round"/>
+      <path d="M 50 10 Q 60 9, 70 15" fill="none" stroke="#fff" stroke-width="1" opacity="0.3" stroke-linecap="round"/>
+    </g>
+  </defs>
+
+  <use href="#disc"/>
+</svg>
