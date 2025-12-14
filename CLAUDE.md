@@ -71,6 +71,7 @@ isoman/
         │   └── isos/IsosPage.tsx  # Main ISOs page (container)
         └── components/
             ├── AddIsoForm.tsx     # Form to add new ISO downloads
+            ├── EditIsoModal.tsx   # Modal to edit ISO metadata and retry downloads
             ├── IsoList.tsx        # List of all ISOs (presentational)
             ├── IsoCard.tsx        # Individual ISO card view
             ├── IsoListView.tsx    # Table view for ISOs
@@ -179,6 +180,7 @@ docker stop <container-id>         # Stop container
 | GET | `/api/isos` | List all ISOs (ordered by created_at DESC) |
 | GET | `/api/isos/:id` | Get single ISO by ID |
 | POST | `/api/isos` | Create new ISO download (queues immediately) |
+| PUT | `/api/isos/:id` | Update ISO metadata and optionally re-download |
 | DELETE | `/api/isos/:id` | Delete ISO file, checksum files, and DB record |
 | POST | `/api/isos/:id/retry` | Retry failed download (resets status to pending) |
 | GET | `/images/` | Modern Tailwind CSS directory listing with file-type icons |
@@ -384,6 +386,40 @@ Error Response (400 Bad Request - invalid state):
     "code": "INVALID_STATE",
     "message": "Cannot retry ISO with status: complete. Only failed downloads can be retried"
   }
+}
+```
+
+**PUT /api/isos/:id - Update ISO**
+
+Request body (all fields optional):
+```json
+{
+  "name": "Alpine Linux",
+  "version": "3.19.1",
+  "arch": "x86_64",
+  "edition": "minimal",
+  "download_url": "https://...",
+  "checksum_url": "https://...",
+  "checksum_type": "sha256"
+}
+```
+
+**Behavior:**
+- **Failed ISOs**: Can update all fields including URLs → triggers re-download with new URLs
+- **Complete ISOs**: Can only update metadata (name, version, arch, edition) → moves files to new location if needed
+- **Other statuses**: Cannot be updated
+
+Success Response (200 OK):
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "name": "alpine-linux",
+    "version": "3.19.1",
+    ...
+  },
+  "message": "ISO updated successfully"
 }
 ```
 

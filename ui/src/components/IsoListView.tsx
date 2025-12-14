@@ -289,6 +289,7 @@ export function IsoListView({
   const table = useReactTable({
     data: isos,
     columns,
+    getRowId: (row) => row.id,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
