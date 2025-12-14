@@ -94,3 +94,61 @@ func EnsureParentDirectory(filePath string) error {
 	dir := filepath.Dir(filePath)
 	return EnsureDirectory(dir)
 }
+
+// MoveFile moves a file from oldPath to newPath.
+// Creates parent directories for newPath if needed.
+// Returns nil if oldPath doesn't exist.
+func MoveFile(oldPath, newPath string) error {
+	// Check if source file exists
+	if _, err := os.Stat(oldPath); os.IsNotExist(err) {
+		return nil // Source doesn't exist, nothing to move
+	}
+
+	// Ensure destination directory exists
+	if err := EnsureParentDirectory(newPath); err != nil {
+		return err
+	}
+
+	// Move the file
+	if err := os.Rename(oldPath, newPath); err != nil {
+		return fmt.Errorf("failed to move file from %s to %s: %w", oldPath, newPath, err)
+	}
+
+	return nil
+}
+
+// MoveFileWithExtensions moves a file and its associated extension files.
+// For example, moves file.iso, file.iso.sha256, file.iso.sha512, file.iso.md5.
+func MoveFileWithExtensions(oldPath, newPath string, extensions ...string) error {
+	// Move base file
+	if err := MoveFile(oldPath, newPath); err != nil {
+		return err
+	}
+
+	// Move extension files (silently - these are optional)
+	for _, ext := range extensions {
+		oldExtPath := oldPath + ext
+		newExtPath := newPath + ext
+		if err := MoveFile(oldExtPath, newExtPath); err != nil {
+			slog.Warn("failed to move extension file", slog.String("ext", ext), slog.Any("error", err))
+		}
+	}
+
+	return nil
+}
+
+// CleanupEmptyParentDirs removes empty parent directories up to the given root.
+// Useful for cleaning up directory structure after moving/deleting files.
+func CleanupEmptyParentDirs(filePath, root string) {
+	dir := filepath.Dir(filePath)
+
+	// Keep removing empty directories until we hit root or a non-empty dir
+	for dir != root && dir != "." && dir != "/" {
+		if err := os.Remove(dir); err != nil {
+			// Directory not empty or other error - stop here
+			break
+		}
+		slog.Debug("removed empty directory", slog.String("dir", dir))
+		dir = filepath.Dir(dir)
+	}
+}

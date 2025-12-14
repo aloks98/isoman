@@ -179,7 +179,7 @@ func (w *Worker) verifyChecksum(iso *models.ISO, filepath string) error {
 	originalFilename := iso.GetOriginalFilename()
 	expectedChecksum, err := FetchExpectedChecksum(iso.ChecksumURL, originalFilename)
 	if err != nil {
-		return fmt.Errorf("failed to fetch checksum: %w", err)
+		return err
 	}
 
 	// Compute actual checksum

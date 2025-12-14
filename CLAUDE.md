@@ -404,7 +404,9 @@ Error Response (400 Bad Request - invalid state):
 ### Checksum Verification
 
 - Supports SHA256, SHA512, MD5
-- Parses standard checksum file format: `hash  filename` or `hash *filename`
+- Parses multiple checksum file formats:
+  - **Standard format**: `hash  filename` or `hash *filename`
+  - **BSD format**: `SHA256 (filename) = hash` (used by Rocky Linux, FreeBSD, macOS, etc.)
 - Handles comments (lines starting with #)
 - Streams files during hashing to avoid memory issues with large ISOs
 - Comparison is case-insensitive

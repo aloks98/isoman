@@ -148,6 +148,64 @@ e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  test.iso
 			want:     "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
 			wantErr:  false,
 		},
+		{
+			name:     "BSD format - SHA256",
+			content:  `SHA256 (test.iso) = e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`,
+			filename: "test.iso",
+			want:     "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			wantErr:  false,
+		},
+		{
+			name:     "BSD format - MD5",
+			content:  `MD5 (test.iso) = abc123def456`,
+			filename: "test.iso",
+			want:     "abc123def456",
+			wantErr:  false,
+		},
+		{
+			name: "BSD format - Rocky Linux style with comments and multiple files",
+			content: `# Rocky-10.1-x86_64-boot.iso: 965412864 bytes
+SHA256 (Rocky-10.1-x86_64-boot.iso) = 18543988d9a1a5632d142c3dc288136dcc48ab71628f92ebcd40ada7f4ecd110
+# Rocky-10.1-x86_64-dvd1.iso: 9278128128 bytes
+SHA256 (Rocky-10.1-x86_64-dvd1.iso) = 55f96d45a052c0ed4f06309480155cb66281a008691eb7f3f359957205b1849a
+# Rocky-10.1-x86_64-minimal.iso: 1528954880 bytes
+SHA256 (Rocky-10.1-x86_64-minimal.iso) = 5aafc2c86e606428cd7c5802b0d28c220f34c181a57eefff2cc6f65214714499`,
+			filename: "Rocky-10.1-x86_64-minimal.iso",
+			want:     "5aafc2c86e606428cd7c5802b0d28c220f34c181a57eefff2cc6f65214714499",
+			wantErr:  false,
+		},
+		{
+			name:     "BSD format - with extra whitespace",
+			content:  `SHA256 (test.iso)   =   e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  `,
+			filename: "test.iso",
+			want:     "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			wantErr:  false,
+		},
+		{
+			name:     "BSD format - file not found",
+			content:  `SHA256 (other.iso) = abc123`,
+			filename: "test.iso",
+			want:     "",
+			wantErr:  true,
+		},
+		{
+			name: "Mixed format - standard and BSD",
+			content: `abc123  standard-file.iso
+SHA256 (bsd-file.iso) = def456
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  test.iso`,
+			filename: "test.iso",
+			want:     "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			wantErr:  false,
+		},
+		{
+			name: "Mixed format - find BSD format file",
+			content: `abc123  standard-file.iso
+SHA256 (test.iso) = e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+def456  another-file.iso`,
+			filename: "test.iso",
+			want:     "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			wantErr:  false,
+		},
 	}
 
 	for _, tt := range tests {

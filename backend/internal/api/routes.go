@@ -19,7 +19,7 @@ func SetupRoutes(isoService *service.ISOService, isoDir string, wsHub *ws.Hub, c
 	// Configure CORS
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AllowOrigins = cfg.Server.CORSOrigins
-	corsConfig.AllowMethods = []string{"GET", "POST", "DELETE", "OPTIONS"}
+	corsConfig.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
 	corsConfig.AllowHeaders = []string{"Origin", "Content-Type", "Accept"}
 	router.Use(cors.New(corsConfig))
 
@@ -33,6 +33,7 @@ func SetupRoutes(isoService *service.ISOService, isoDir string, wsHub *ws.Hub, c
 		api.GET("/isos", handlers.ListISOs)
 		api.GET("/isos/:id", handlers.GetISO)
 		api.POST("/isos", handlers.CreateISO)
+		api.PUT("/isos/:id", handlers.UpdateISO)
 		api.DELETE("/isos/:id", handlers.DeleteISO)
 		api.POST("/isos/:id/retry", handlers.RetryISO)
 	}

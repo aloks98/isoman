@@ -20,7 +20,7 @@ func TestSetupRoutes(t *testing.T) {
 	manager := download.NewManager(env.DB, env.ISODir, 1)
 	defer manager.Stop()
 
-	isoService := service.NewISOService(env.DB, manager)
+	isoService := service.NewISOService(env.DB, manager, env.ISODir)
 
 	wsHub := ws.NewHub()
 	router := SetupRoutes(isoService, env.ISODir, wsHub, env.Config)
@@ -36,7 +36,7 @@ func TestAPIRoutes(t *testing.T) {
 
 	manager := download.NewManager(env.DB, env.ISODir, 1)
 	defer manager.Stop()
-	isoService := service.NewISOService(env.DB, manager)
+	isoService := service.NewISOService(env.DB, manager, env.ISODir)
 
 	wsHub := ws.NewHub()
 	router := SetupRoutes(isoService, env.ISODir, wsHub, env.Config)
@@ -105,7 +105,7 @@ func TestAPIRouteNotFound(t *testing.T) {
 
 	manager := download.NewManager(env.DB, env.ISODir, 1)
 	defer manager.Stop()
-	isoService := service.NewISOService(env.DB, manager)
+	isoService := service.NewISOService(env.DB, manager, env.ISODir)
 
 	wsHub := ws.NewHub()
 	router := SetupRoutes(isoService, env.ISODir, wsHub, env.Config)
@@ -131,7 +131,7 @@ func TestCORSConfiguration(t *testing.T) {
 
 	manager := download.NewManager(env.DB, env.ISODir, 1)
 	defer manager.Stop()
-	isoService := service.NewISOService(env.DB, manager)
+	isoService := service.NewISOService(env.DB, manager, env.ISODir)
 
 	wsHub := ws.NewHub()
 	router := SetupRoutes(isoService, env.ISODir, wsHub, env.Config)
@@ -171,7 +171,7 @@ func TestNoRouteHandler(t *testing.T) {
 
 	manager := download.NewManager(env.DB, env.ISODir, 1)
 	defer manager.Stop()
-	isoService := service.NewISOService(env.DB, manager)
+	isoService := service.NewISOService(env.DB, manager, env.ISODir)
 
 	wsHub := ws.NewHub()
 	router := SetupRoutes(isoService, env.ISODir, wsHub, env.Config)
@@ -246,7 +246,7 @@ func TestHealthEndpoint(t *testing.T) {
 
 	manager := download.NewManager(env.DB, env.ISODir, 1)
 	defer manager.Stop()
-	isoService := service.NewISOService(env.DB, manager)
+	isoService := service.NewISOService(env.DB, manager, env.ISODir)
 
 	wsHub := ws.NewHub()
 	router := SetupRoutes(isoService, env.ISODir, wsHub, env.Config)
@@ -278,7 +278,7 @@ func TestImagesRoute(t *testing.T) {
 
 	manager := download.NewManager(env.DB, env.ISODir, 1)
 	defer manager.Stop()
-	isoService := service.NewISOService(env.DB, manager)
+	isoService := service.NewISOService(env.DB, manager, env.ISODir)
 
 	wsHub := ws.NewHub()
 	router := SetupRoutes(isoService, env.ISODir, wsHub, env.Config)

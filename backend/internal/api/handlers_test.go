@@ -43,7 +43,7 @@ func setupTestHandlers(t *testing.T) (*Handlers, *db.DB, *download.Manager, stri
 	manager := download.NewManager(database, isoDir, 1)
 
 	// Create ISO service
-	isoService := service.NewISOService(database, manager)
+	isoService := service.NewISOService(database, manager, isoDir)
 
 	// Create handlers
 	handlers := NewHandlers(isoService, isoDir)

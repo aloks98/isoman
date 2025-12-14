@@ -55,6 +55,18 @@ type CreateISORequest struct {
 	ChecksumType string `json:"checksum_type" binding:"omitempty,oneof=sha256 sha512 md5"`
 }
 
+// UpdateISORequest represents the allowed fields for updating an ISO.
+// Which fields are actually editable depends on the ISO's current status.
+type UpdateISORequest struct {
+	Name         *string `json:"name"`
+	Version      *string `json:"version"`
+	Arch         *string `json:"arch"`
+	Edition      *string `json:"edition"`
+	DownloadURL  *string `json:"download_url" binding:"omitempty,url"`
+	ChecksumURL  *string `json:"checksum_url" binding:"omitempty,url"`
+	ChecksumType *string `json:"checksum_type" binding:"omitempty,oneof=sha256 sha512 md5"`
+}
+
 // "Ubuntu Server" -> "ubuntu-server".
 func NormalizeName(name string) string {
 	// Convert to lowercase and trim

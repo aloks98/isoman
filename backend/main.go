@@ -80,7 +80,7 @@ func main() {
 	log.Info("download manager started", slog.Int("worker_count", cfg.Download.WorkerCount))
 
 	// Initialize ISO service
-	isoService := service.NewISOService(database, manager)
+	isoService := service.NewISOService(database, manager, isoDir)
 	log.Info("iso service initialized")
 
 	// Setup routes

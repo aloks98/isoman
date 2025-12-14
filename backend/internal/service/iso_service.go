@@ -10,7 +10,9 @@ import (
 	"linux-iso-manager/internal/constants"
 	"linux-iso-manager/internal/db"
 	"linux-iso-manager/internal/download"
+	"linux-iso-manager/internal/fileutil"
 	"linux-iso-manager/internal/models"
+	"linux-iso-manager/internal/pathutil"
 
 	"github.com/google/uuid"
 )
@@ -19,13 +21,15 @@ import (
 type ISOService struct {
 	db      *db.DB
 	manager *download.Manager
+	isoDir  string
 }
 
 // NewISOService creates a new ISO service.
-func NewISOService(database *db.DB, manager *download.Manager) *ISOService {
+func NewISOService(database *db.DB, manager *download.Manager, isoDir string) *ISOService {
 	return &ISOService{
 		db:      database,
 		manager: manager,
+		isoDir:  isoDir,
 	}
 }
 
@@ -160,6 +164,177 @@ func (s *ISOService) RetryISO(id string) (*models.ISO, error) {
 	s.manager.QueueDownload(iso)
 
 	return iso, nil
+}
+
+// UpdateISO updates an existing ISO.
+// For failed ISOs: can edit all fields, triggers re-download.
+// For complete ISOs: can only edit metadata (name, version, arch, edition), moves files.
+func (s *ISOService) UpdateISO(id string, req models.UpdateISORequest) (*models.ISO, error) {
+	// Get existing ISO from database
+	iso, err := s.db.GetISO(id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Validate edit is allowed
+	if err := s.validateISOUpdate(iso, req); err != nil {
+		return nil, err
+	}
+
+	// Store old path for file operations
+	oldFilePath := iso.FilePath
+
+	// Apply changes and check if metadata changed
+	metadataChanged := s.applyISOUpdates(iso, req)
+
+	// Recompute derived fields
+	ComputeFields(iso)
+
+	// Check for conflicts if metadata changed
+	if metadataChanged {
+		if err := s.checkUpdateConflict(iso); err != nil {
+			return nil, err
+		}
+	}
+
+	// Perform file operations and update database
+	return iso, s.finalizeISOUpdate(iso, oldFilePath, metadataChanged)
+}
+
+// validateISOUpdate checks if the update is allowed based on ISO status.
+func (s *ISOService) validateISOUpdate(iso *models.ISO, req models.UpdateISORequest) error {
+	// Can't edit downloads in progress
+	if iso.Status == models.StatusPending || iso.Status == models.StatusDownloading || iso.Status == models.StatusVerifying {
+		return &InvalidStateError{
+			CurrentStatus: string(iso.Status),
+			Message:       "Cannot edit ISO while download is in progress",
+		}
+	}
+
+	// For complete ISOs, only allow editing metadata
+	if iso.Status == models.StatusComplete {
+		if req.DownloadURL != nil || req.ChecksumURL != nil || req.ChecksumType != nil {
+			return &InvalidStateError{
+				CurrentStatus: string(iso.Status),
+				Message:       "Cannot edit URLs for complete ISOs. Only metadata (name, version, arch, edition) can be changed",
+			}
+		}
+	}
+
+	return nil
+}
+
+// applyISOUpdates applies the requested changes to the ISO and returns whether metadata changed.
+func (s *ISOService) applyISOUpdates(iso *models.ISO, req models.UpdateISORequest) bool {
+	metadataChanged := false
+
+	// Apply metadata changes
+	if req.Name != nil {
+		iso.Name = *req.Name
+		metadataChanged = true
+	}
+	if req.Version != nil {
+		iso.Version = *req.Version
+		metadataChanged = true
+	}
+	if req.Arch != nil {
+		iso.Arch = *req.Arch
+		metadataChanged = true
+	}
+	if req.Edition != nil {
+		iso.Edition = *req.Edition
+		metadataChanged = true
+	}
+
+	// For failed ISOs, allow URL changes
+	if iso.Status == models.StatusFailed {
+		if req.DownloadURL != nil {
+			if newFileType, err := DetectFileType(*req.DownloadURL); err == nil {
+				iso.DownloadURL = *req.DownloadURL
+				iso.FileType = newFileType
+				metadataChanged = true
+			}
+		}
+		if req.ChecksumURL != nil {
+			iso.ChecksumURL = *req.ChecksumURL
+		}
+		if req.ChecksumType != nil {
+			iso.ChecksumType = *req.ChecksumType
+		} else if req.ChecksumURL != nil && iso.ChecksumType == "" {
+			iso.ChecksumType = "sha256"
+		}
+	}
+
+	return metadataChanged
+}
+
+// checkUpdateConflict checks if the updated ISO conflicts with an existing ISO.
+func (s *ISOService) checkUpdateConflict(iso *models.ISO) error {
+	exists, err := s.db.ISOExists(iso.Name, iso.Version, iso.Arch, iso.Edition, iso.FileType)
+	if err != nil {
+		return fmt.Errorf("failed to check for duplicate: %w", err)
+	}
+
+	if exists {
+		existingISO, err := s.db.GetISOByComposite(iso.Name, iso.Version, iso.Arch, iso.Edition, iso.FileType)
+		if err != nil {
+			return fmt.Errorf("failed to get existing ISO: %w", err)
+		}
+		// Only error if it's a different ISO
+		if existingISO.ID != iso.ID {
+			return &ISOAlreadyExistsError{ExistingISO: existingISO}
+		}
+	}
+
+	return nil
+}
+
+// finalizeISOUpdate performs file operations and database update based on ISO status.
+func (s *ISOService) finalizeISOUpdate(iso *models.ISO, oldFilePath string, metadataChanged bool) error {
+	if iso.Status == models.StatusFailed {
+		// Reset and re-queue download
+		iso.Status = models.StatusPending
+		iso.Progress = 0
+		iso.ErrorMessage = ""
+		iso.CompletedAt = nil
+
+		if err := s.db.UpdateISO(iso); err != nil {
+			return fmt.Errorf("failed to update ISO: %w", err)
+		}
+
+		s.manager.QueueDownload(iso)
+		return nil
+	}
+	if iso.Status == models.StatusComplete && metadataChanged {
+		// Move files for complete ISOs with metadata changes
+		if err := s.moveISOFiles(oldFilePath, iso.FilePath); err != nil {
+			return fmt.Errorf("failed to move ISO files: %w", err)
+		}
+	}
+
+	// Update database
+	if err := s.db.UpdateISO(iso); err != nil {
+		return fmt.Errorf("failed to update ISO: %w", err)
+	}
+
+	return nil
+}
+
+// moveISOFiles moves an ISO file and its checksum files from old path to new path.
+func (s *ISOService) moveISOFiles(oldRelPath, newRelPath string) error {
+	// Convert relative paths to absolute paths
+	oldAbsPath := pathutil.ConstructISOPath(s.isoDir, oldRelPath)
+	newAbsPath := pathutil.ConstructISOPath(s.isoDir, newRelPath)
+
+	// Move the main ISO file and checksum files
+	if err := fileutil.MoveFileWithExtensions(oldAbsPath, newAbsPath, constants.ChecksumExtensions...); err != nil {
+		return err
+	}
+
+	// Clean up empty parent directories from the old location
+	fileutil.CleanupEmptyParentDirs(oldAbsPath, s.isoDir)
+
+	return nil
 }
 
 // Business logic functions (moved from models package)

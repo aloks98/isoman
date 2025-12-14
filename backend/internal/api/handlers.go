@@ -8,6 +8,7 @@ import (
 
 	"linux-iso-manager/internal/constants"
 	"linux-iso-manager/internal/fileutil"
+	"linux-iso-manager/internal/models"
 	"linux-iso-manager/internal/pathutil"
 	"linux-iso-manager/internal/service"
 	"linux-iso-manager/internal/validation"
@@ -167,6 +168,56 @@ func (h *Handlers) RetryISO(c *gin.Context) {
 
 	// Return updated ISO
 	SuccessResponseWithMessage(c, http.StatusOK, iso, "Download retry queued successfully")
+}
+
+// UpdateISO updates an existing ISO.
+func (h *Handlers) UpdateISO(c *gin.Context) {
+	id := c.Param("id")
+
+	// Parse request body
+	var req models.UpdateISORequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		ErrorResponse(c, http.StatusBadRequest, ErrCodeBadRequest, "Invalid request body: "+err.Error())
+		return
+	}
+
+	// Call service layer to update ISO
+	iso, err := h.isoService.UpdateISO(id, req)
+	if err != nil {
+		// Check for specific error types
+		var invalidStateErr *service.InvalidStateError
+		if errors.As(err, &invalidStateErr) {
+			ErrorResponse(c, http.StatusBadRequest, ErrCodeInvalidState, invalidStateErr.Error())
+			return
+		}
+
+		var existsErr *service.ISOAlreadyExistsError
+		if errors.As(err, &existsErr) {
+			c.JSON(http.StatusConflict, APIResponse{
+				Success: false,
+				Error: &APIError{
+					Code:    ErrCodeConflict,
+					Message: "ISO already exists",
+				},
+				Data: gin.H{
+					"existing": existsErr.ExistingISO,
+				},
+			})
+			return
+		}
+
+		// Check if it's a not found error
+		if strings.Contains(err.Error(), "not found") {
+			ErrorResponse(c, http.StatusNotFound, ErrCodeNotFound, "ISO not found")
+			return
+		}
+
+		ErrorResponse(c, http.StatusInternalServerError, ErrCodeInternalError, "Failed to update ISO")
+		return
+	}
+
+	// Return updated ISO
+	SuccessResponseWithMessage(c, http.StatusOK, iso, "ISO updated successfully")
 }
 
 // HealthCheck returns server health status.

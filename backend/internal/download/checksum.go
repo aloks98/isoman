@@ -56,10 +56,18 @@ func FetchExpectedChecksum(checksumURL, filename string) (string, error) {
 		return "", fmt.Errorf("failed to fetch checksum file: %w", err)
 	}
 
-	return ParseChecksumFile(bytes.NewReader(data), filename)
+	checksum, err := ParseChecksumFile(bytes.NewReader(data), filename)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse checksum file: %w", err)
+	}
+
+	return checksum, nil
 }
 
 // Handles comments (lines starting with #).
+// Supports two formats:
+// 1. Standard: "hash  filename" or "hash *filename"
+// 2. BSD: "SHA256 (filename) = hash" or "MD5 (filename) = hash"
 func ParseChecksumFile(reader io.Reader, filename string) (string, error) {
 	scanner := bufio.NewScanner(reader)
 
@@ -71,7 +79,28 @@ func ParseChecksumFile(reader io.Reader, filename string) (string, error) {
 			continue
 		}
 
-		// Split on whitespace
+		// Try BSD format first: SHA256 (filename) = hash
+		if strings.Contains(line, "(") && strings.Contains(line, ")") && strings.Contains(line, "=") {
+			// Extract filename from parentheses
+			startParen := strings.Index(line, "(")
+			endParen := strings.Index(line, ")")
+			if startParen != -1 && endParen != -1 && endParen > startParen {
+				fileInLine := strings.TrimSpace(line[startParen+1 : endParen])
+
+				// Check if this is the file we're looking for
+				if fileInLine == filename {
+					// Extract hash after the = sign
+					parts := strings.Split(line[endParen+1:], "=")
+					if len(parts) >= 2 {
+						hash := strings.TrimSpace(parts[1])
+						return strings.ToLower(hash), nil
+					}
+				}
+			}
+			continue
+		}
+
+		// Try standard format: hash  filename
 		parts := strings.Fields(line)
 		if len(parts) < 2 {
 			continue
