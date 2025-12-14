@@ -141,7 +141,12 @@ export function AddIsoForm({ onSubmit }: AddIsoFormProps) {
               </label>
               <Select
                 value={archValue}
-                onValueChange={(value) => setValue('arch', value as any)}
+                onValueChange={(value) =>
+                  setValue(
+                    'arch',
+                    value as 'x86_64' | 'aarch64' | 'arm64' | 'i686',
+                  )
+                }
               >
                 <SelectTrigger id="arch">
                   <SelectValue />
@@ -228,7 +233,10 @@ export function AddIsoForm({ onSubmit }: AddIsoFormProps) {
               <Select
                 value={checksumTypeValue}
                 onValueChange={(value) =>
-                  setValue('checksum_type', value as any)
+                  setValue(
+                    'checksum_type',
+                    value as 'sha256' | 'sha512' | 'md5',
+                  )
                 }
               >
                 <SelectTrigger id="checksum_type">

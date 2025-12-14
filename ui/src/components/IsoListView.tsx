@@ -43,7 +43,12 @@ interface IsoListViewProps {
   onEdit: (iso: ISO) => void;
 }
 
-export function IsoListView({ isos, onDelete, onRetry, onEdit }: IsoListViewProps) {
+export function IsoListView({
+  isos,
+  onDelete,
+  onRetry,
+  onEdit,
+}: IsoListViewProps) {
   const { copyToClipboard, copiedKey } = useCopyWithFeedback();
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);

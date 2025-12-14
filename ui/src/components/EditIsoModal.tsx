@@ -109,10 +109,7 @@ export function EditIsoModal({
           data.checksum_url !== iso.checksum_url
         )
           updateRequest.checksum_url = data.checksum_url || undefined;
-        if (
-          data.checksum_type &&
-          data.checksum_type !== iso.checksum_type
-        )
+        if (data.checksum_type && data.checksum_type !== iso.checksum_type)
           updateRequest.checksum_type = data.checksum_type;
       }
 
@@ -193,7 +190,12 @@ export function EditIsoModal({
               </label>
               <Select
                 value={archValue}
-                onValueChange={(value) => setValue('arch', value as any)}
+                onValueChange={(value) =>
+                  setValue(
+                    'arch',
+                    value as 'x86_64' | 'aarch64' | 'arm64' | 'i686',
+                  )
+                }
               >
                 <SelectTrigger id="arch">
                   <SelectValue />
@@ -282,7 +284,9 @@ export function EditIsoModal({
             </label>
             <Select
               value={checksumTypeValue}
-              onValueChange={(value) => setValue('checksum_type', value as any)}
+              onValueChange={(value) =>
+                setValue('checksum_type', value as 'sha256' | 'sha512' | 'md5')
+              }
               disabled={!canEditURLs}
             >
               <SelectTrigger id="checksum_type">
