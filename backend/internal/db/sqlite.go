@@ -429,3 +429,24 @@ func (db *DB) GetISOByComposite(name, version, arch, edition, fileType string) (
 	}
 	return iso, nil
 }
+
+// ListISOsWithMissingSize returns ISOs that are complete but have size_bytes = 0.
+func (db *DB) ListISOsWithMissingSize() ([]models.ISO, error) {
+	query := fmt.Sprintf("SELECT %s FROM isos WHERE status = 'complete' AND size_bytes = 0", isoSelectFields)
+	rows, err := db.conn.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list ISOs with missing size: %w", err)
+	}
+	defer rows.Close()
+
+	var isos []models.ISO
+	for rows.Next() {
+		iso, err := scanISO(rows)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan ISO row: %w", err)
+		}
+		isos = append(isos, *iso)
+	}
+
+	return isos, rows.Err()
+}

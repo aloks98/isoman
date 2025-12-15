@@ -90,6 +90,16 @@ func (w *Worker) Process(ctx context.Context, iso *models.ISO) error {
 		return fmt.Errorf("failed to move file to final location: %w", err)
 	}
 
+	// Update size_bytes from actual file size if not set (e.g., server didn't send Content-Length)
+	if iso.SizeBytes == 0 {
+		if fi, err := os.Stat(finalFile); err == nil {
+			iso.SizeBytes = fi.Size()
+			if err := w.db.UpdateISOSize(iso.ID, iso.SizeBytes); err != nil {
+				slog.Warn("failed to update ISO size from file", slog.Any("error", err))
+			}
+		}
+	}
+
 	// Download and save checksum file alongside ISO (after file is moved)
 	if iso.ChecksumURL != "" {
 		checksumFile := pathutil.ConstructChecksumPath(finalFile, iso.ChecksumType)

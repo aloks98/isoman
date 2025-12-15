@@ -516,3 +516,85 @@ func TestWorkerTempFileCleanup(t *testing.T) {
 		t.Errorf("Temp file should be cleaned up: %s", tmpFile)
 	}
 }
+
+// TestWorkerDownloadNoContentLength tests that size_bytes is set from actual file
+// when server doesn't send Content-Length header.
+func TestWorkerDownloadNoContentLength(t *testing.T) {
+	worker, database, isoDir, cleanup := setupTestWorker(t)
+	defer cleanup()
+
+	// Create test HTTP server WITHOUT Content-Length header
+	testContent := []byte("test file content without content-length header")
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Explicitly remove Content-Length by using chunked transfer
+		w.Header().Set("Transfer-Encoding", "chunked")
+		w.WriteHeader(http.StatusOK)
+		w.Write(testContent)
+	}))
+	defer server.Close()
+
+	// Create test ISO
+	iso := &models.ISO{
+		ID:          uuid.New().String(),
+		Name:        "test-no-cl",
+		Version:     "1.0",
+		Arch:        "x86_64",
+		FileType:    "iso",
+		DownloadURL: server.URL,
+		Status:      models.StatusPending,
+		Progress:    0,
+		SizeBytes:   0, // Explicitly set to 0
+		CreatedAt:   time.Now(),
+	}
+	iso.ComputeFields()
+	database.CreateISO(iso)
+
+	// Verify initial size is 0
+	initialISO, _ := database.GetISO(iso.ID)
+	if initialISO.SizeBytes != 0 {
+		t.Errorf("Initial SizeBytes should be 0, got: %d", initialISO.SizeBytes)
+	}
+
+	// Process download
+	ctx := context.Background()
+	err := worker.Process(ctx, iso)
+	if err != nil {
+		t.Fatalf("Process failed: %v", err)
+	}
+
+	// Verify file was downloaded
+	finalPath := filepath.Join(isoDir, iso.FilePath)
+	fi, err := os.Stat(finalPath)
+	if os.IsNotExist(err) {
+		t.Fatalf("Downloaded file does not exist at %s", finalPath)
+	}
+
+	// Verify file content matches
+	content, err := os.ReadFile(finalPath)
+	if err != nil {
+		t.Fatalf("Failed to read downloaded file: %v", err)
+	}
+	if !bytes.Equal(content, testContent) {
+		t.Errorf("File content mismatch: got %q, want %q", content, testContent)
+	}
+
+	// THIS IS THE KEY TEST: Verify size_bytes was backfilled from actual file size
+	updatedISO, err := database.GetISO(iso.ID)
+	if err != nil {
+		t.Fatalf("Failed to get updated ISO: %v", err)
+	}
+
+	if updatedISO.Status != models.StatusComplete {
+		t.Errorf("Status should be 'complete', got: %s", updatedISO.Status)
+	}
+
+	// size_bytes should match actual file size even without Content-Length
+	expectedSize := fi.Size()
+	if updatedISO.SizeBytes != expectedSize {
+		t.Errorf("SizeBytes should be %d (actual file size), got: %d", expectedSize, updatedISO.SizeBytes)
+	}
+
+	if updatedISO.SizeBytes != int64(len(testContent)) {
+		t.Errorf("SizeBytes should be %d (content length), got: %d", len(testContent), updatedISO.SizeBytes)
+	}
+}

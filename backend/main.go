@@ -58,6 +58,9 @@ func main() {
 	defer database.Close()
 	log.Info("database initialized", slog.String("db_path", dbPath))
 
+	// Backfill missing ISO sizes from actual files on disk
+	backfillISOSizes(database, isoDir, log)
+
 	// Initialize WebSocket hub
 	wsHub := ws.NewHub()
 	go wsHub.Run()
@@ -134,4 +137,55 @@ func main() {
 	}
 
 	log.Info("server stopped successfully")
+}
+
+// backfillISOSizes updates size_bytes for complete ISOs that have size_bytes = 0
+// by reading the actual file size from disk. This handles ISOs that were downloaded
+// when the server didn't send a Content-Length header.
+func backfillISOSizes(database *db.DB, isoDir string, log *slog.Logger) {
+	isos, err := database.ListISOsWithMissingSize()
+	if err != nil {
+		log.Warn("failed to list ISOs with missing size", slog.Any("error", err))
+		return
+	}
+
+	if len(isos) == 0 {
+		return
+	}
+
+	log.Info("backfilling missing ISO sizes", slog.Int("count", len(isos)))
+
+	updated := 0
+	for _, iso := range isos {
+		filePath := pathutil.ConstructISOPath(isoDir, iso.FilePath)
+		fi, err := os.Stat(filePath)
+		if err != nil {
+			log.Warn("failed to stat ISO file for size backfill",
+				slog.String("iso_id", iso.ID),
+				slog.String("path", filePath),
+				slog.Any("error", err),
+			)
+			continue
+		}
+
+		size := fi.Size()
+		if err := database.UpdateISOSize(iso.ID, size); err != nil {
+			log.Warn("failed to update ISO size",
+				slog.String("iso_id", iso.ID),
+				slog.Any("error", err),
+			)
+			continue
+		}
+
+		updated++
+		log.Debug("backfilled ISO size",
+			slog.String("iso_id", iso.ID),
+			slog.String("name", iso.Name),
+			slog.Int64("size_bytes", size),
+		)
+	}
+
+	if updated > 0 {
+		log.Info("backfilled ISO sizes", slog.Int("updated", updated))
+	}
 }

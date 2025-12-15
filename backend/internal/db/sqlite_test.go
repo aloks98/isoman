@@ -762,3 +762,112 @@ func TestConcurrentOperations(t *testing.T) {
 		t.Error("ISO corrupted after concurrent operations")
 	}
 }
+
+func TestListISOsWithMissingSize(t *testing.T) {
+	db, cleanup := setupTestDB(t)
+	defer cleanup()
+
+	// Create ISOs with various states
+	// ISO 1: complete with size_bytes = 0 (should be returned)
+	iso1 := createTestISO()
+	iso1.ID = "iso-missing-size-1"
+	iso1.Name = "missing-size-1"
+	iso1.Status = models.StatusComplete
+	iso1.SizeBytes = 0
+	if err := db.CreateISO(iso1); err != nil {
+		t.Fatalf("Failed to create iso1: %v", err)
+	}
+
+	// ISO 2: complete with size_bytes > 0 (should NOT be returned)
+	iso2 := createTestISO()
+	iso2.ID = "iso-has-size"
+	iso2.Name = "has-size"
+	iso2.Status = models.StatusComplete
+	iso2.SizeBytes = 1000000
+	if err := db.CreateISO(iso2); err != nil {
+		t.Fatalf("Failed to create iso2: %v", err)
+	}
+
+	// ISO 3: pending with size_bytes = 0 (should NOT be returned - not complete)
+	iso3 := createTestISO()
+	iso3.ID = "iso-pending"
+	iso3.Name = "pending"
+	iso3.Status = models.StatusPending
+	iso3.SizeBytes = 0
+	if err := db.CreateISO(iso3); err != nil {
+		t.Fatalf("Failed to create iso3: %v", err)
+	}
+
+	// ISO 4: failed with size_bytes = 0 (should NOT be returned - not complete)
+	iso4 := createTestISO()
+	iso4.ID = "iso-failed"
+	iso4.Name = "failed"
+	iso4.Status = models.StatusFailed
+	iso4.SizeBytes = 0
+	if err := db.CreateISO(iso4); err != nil {
+		t.Fatalf("Failed to create iso4: %v", err)
+	}
+
+	// ISO 5: complete with size_bytes = 0 (should be returned)
+	iso5 := createTestISO()
+	iso5.ID = "iso-missing-size-2"
+	iso5.Name = "missing-size-2"
+	iso5.Status = models.StatusComplete
+	iso5.SizeBytes = 0
+	if err := db.CreateISO(iso5); err != nil {
+		t.Fatalf("Failed to create iso5: %v", err)
+	}
+
+	// Test ListISOsWithMissingSize
+	isos, err := db.ListISOsWithMissingSize()
+	if err != nil {
+		t.Fatalf("ListISOsWithMissingSize() failed: %v", err)
+	}
+
+	// Should return exactly 2 ISOs (iso1 and iso5)
+	if len(isos) != 2 {
+		t.Errorf("Expected 2 ISOs with missing size, got %d", len(isos))
+	}
+
+	// Verify the returned ISOs are the correct ones
+	foundIDs := make(map[string]bool)
+	for _, iso := range isos {
+		foundIDs[iso.ID] = true
+		// All returned ISOs should be complete with size_bytes = 0
+		if iso.Status != models.StatusComplete {
+			t.Errorf("Returned ISO %s has status %s, expected complete", iso.ID, iso.Status)
+		}
+		if iso.SizeBytes != 0 {
+			t.Errorf("Returned ISO %s has size_bytes %d, expected 0", iso.ID, iso.SizeBytes)
+		}
+	}
+
+	if !foundIDs["iso-missing-size-1"] {
+		t.Error("Expected iso-missing-size-1 to be returned")
+	}
+	if !foundIDs["iso-missing-size-2"] {
+		t.Error("Expected iso-missing-size-2 to be returned")
+	}
+}
+
+func TestListISOsWithMissingSize_Empty(t *testing.T) {
+	db, cleanup := setupTestDB(t)
+	defer cleanup()
+
+	// Create only ISOs that should NOT be returned
+	iso := createTestISO()
+	iso.Status = models.StatusComplete
+	iso.SizeBytes = 500000
+	if err := db.CreateISO(iso); err != nil {
+		t.Fatalf("Failed to create ISO: %v", err)
+	}
+
+	isos, err := db.ListISOsWithMissingSize()
+	if err != nil {
+		t.Fatalf("ListISOsWithMissingSize() failed: %v", err)
+	}
+
+	if len(isos) != 0 {
+		t.Errorf("Expected 0 ISOs with missing size, got %d", len(isos))
+	}
+}
