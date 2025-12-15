@@ -1,6 +1,42 @@
 # ISOMan
 
+[![GitHub Release](https://img.shields.io/github/v/release/aloks98/isoman?style=flat-square)](https://github.com/aloks98/isoman/releases/latest)
+[![CI](https://img.shields.io/github/actions/workflow/status/aloks98/isoman/ci.yml?branch=master&style=flat-square&label=CI)](https://github.com/aloks98/isoman/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
+
 A modern, self-hosted Linux ISO download manager with real-time progress tracking and verification.
+
+## Screenshots
+
+<p align="center">
+  <img src="screenshots/grid-view-complete.png" alt="Grid View" width="800">
+  <br><em>Grid view showing completed ISO downloads</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/list-view.png" alt="List View" width="800">
+  <br><em>List view with sortable columns</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/grid-view-downloading.png" alt="Download Progress" width="800">
+  <br><em>Real-time download progress tracking</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/statistics.png" alt="Statistics Dashboard" width="800">
+  <br><em>Statistics dashboard with charts</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/add-iso-form.png" alt="Add ISO Form" width="800">
+  <br><em>Add new ISO download form</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/directory-listing.png" alt="Directory Listing" width="800">
+  <br><em>HTTP file browser for direct downloads</em>
+</p>
 
 ## What is ISOMan?
 
