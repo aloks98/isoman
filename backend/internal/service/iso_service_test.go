@@ -1,10 +1,15 @@
 package service
 
 import (
+	"errors"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
+	"linux-iso-manager/internal/download"
 	"linux-iso-manager/internal/models"
+	"linux-iso-manager/internal/testutil"
 )
 
 func TestNormalizeName(t *testing.T) {
@@ -383,5 +388,414 @@ func TestComputeFields(t *testing.T) {
 				t.Errorf("ComputeFields() DownloadLink = %q, want %q", gotLink, tt.wantDownloadLink)
 			}
 		})
+	}
+}
+
+// setupTestISOService creates a test ISO service with database and manager.
+func setupTestISOService(t *testing.T) (*ISOService, *testutil.TestEnv) {
+	t.Helper()
+
+	env := testutil.SetupTestEnvironment(t)
+	manager := download.NewManager(env.DB, env.ISODir, 1)
+	service := NewISOService(env.DB, manager, env.ISODir)
+
+	return service, env
+}
+
+func TestNewISOService(t *testing.T) {
+	env := testutil.SetupTestEnvironment(t)
+	defer env.Cleanup()
+
+	manager := download.NewManager(env.DB, env.ISODir, 1)
+	service := NewISOService(env.DB, manager, env.ISODir)
+
+	if service == nil {
+		t.Fatal("NewISOService() returned nil")
+	}
+}
+
+func TestISOService_CreateISO(t *testing.T) {
+	service, env := setupTestISOService(t)
+	defer env.Cleanup()
+
+	t.Run("Success", func(t *testing.T) {
+		req := CreateISORequest{
+			Name:         "Alpine Linux",
+			Version:      "3.19.1",
+			Arch:         "x86_64",
+			Edition:      "",
+			DownloadURL:  "https://example.com/alpine.iso",
+			ChecksumURL:  "https://example.com/alpine.iso.sha256",
+			ChecksumType: "sha256",
+		}
+
+		iso, err := service.CreateISO(req)
+		if err != nil {
+			t.Fatalf("CreateISO() failed: %v", err)
+		}
+
+		if iso.Name != "alpine-linux" {
+			t.Errorf("Name should be normalized to 'alpine-linux', got: %s", iso.Name)
+		}
+		if iso.Status != models.StatusPending {
+			t.Errorf("Status should be 'pending', got: %s", iso.Status)
+		}
+		if iso.FileType != "iso" {
+			t.Errorf("FileType should be 'iso', got: %s", iso.FileType)
+		}
+	})
+
+	t.Run("DuplicateISO", func(t *testing.T) {
+		// Create first ISO
+		req := CreateISORequest{
+			Name:        "Ubuntu",
+			Version:     "24.04",
+			Arch:        "x86_64",
+			DownloadURL: "https://example.com/ubuntu.iso",
+		}
+
+		_, err := service.CreateISO(req)
+		if err != nil {
+			t.Fatalf("First CreateISO() failed: %v", err)
+		}
+
+		// Try to create duplicate
+		_, err = service.CreateISO(req)
+		if err == nil {
+			t.Fatal("Expected error for duplicate ISO")
+		}
+
+		var existsErr *ISOAlreadyExistsError
+		if !errors.As(err, &existsErr) {
+			t.Errorf("Expected ISOAlreadyExistsError, got: %T", err)
+		}
+	})
+
+	t.Run("UnsupportedFileType", func(t *testing.T) {
+		req := CreateISORequest{
+			Name:        "Test",
+			Version:     "1.0",
+			Arch:        "x86_64",
+			DownloadURL: "https://example.com/file.txt",
+		}
+
+		_, err := service.CreateISO(req)
+		if err == nil {
+			t.Fatal("Expected error for unsupported file type")
+		}
+	})
+
+	t.Run("DefaultChecksumType", func(t *testing.T) {
+		req := CreateISORequest{
+			Name:        "Debian",
+			Version:     "12",
+			Arch:        "x86_64",
+			DownloadURL: "https://example.com/debian.iso",
+			ChecksumURL: "https://example.com/debian.iso.sha256",
+			// ChecksumType not specified
+		}
+
+		iso, err := service.CreateISO(req)
+		if err != nil {
+			t.Fatalf("CreateISO() failed: %v", err)
+		}
+
+		if iso.ChecksumType != "sha256" {
+			t.Errorf("ChecksumType should default to 'sha256', got: %s", iso.ChecksumType)
+		}
+	})
+}
+
+func TestISOService_GetISO(t *testing.T) {
+	service, env := setupTestISOService(t)
+	defer env.Cleanup()
+
+	t.Run("ExistingISO", func(t *testing.T) {
+		// Create ISO directly in DB
+		iso := testutil.CreateAndInsertTestISO(t, env.DB, &testutil.TestISO{
+			Name:    "alpine",
+			Version: "3.20",
+			Status:  models.StatusComplete,
+		})
+
+		retrieved, err := service.GetISO(iso.ID)
+		if err != nil {
+			t.Fatalf("GetISO() failed: %v", err)
+		}
+
+		if retrieved.ID != iso.ID {
+			t.Errorf("ID mismatch: expected %s, got %s", iso.ID, retrieved.ID)
+		}
+	})
+
+	t.Run("NonExistentISO", func(t *testing.T) {
+		_, err := service.GetISO("nonexistent-id")
+		if err == nil {
+			t.Fatal("Expected error for non-existent ISO")
+		}
+	})
+}
+
+func TestISOService_ListISOs(t *testing.T) {
+	service, env := setupTestISOService(t)
+	defer env.Cleanup()
+
+	t.Run("EmptyDatabase", func(t *testing.T) {
+		isos, err := service.ListISOs()
+		if err != nil {
+			t.Fatalf("ListISOs() failed: %v", err)
+		}
+
+		if len(isos) != 0 {
+			t.Errorf("Expected 0 ISOs, got %d", len(isos))
+		}
+	})
+
+	t.Run("WithData", func(t *testing.T) {
+		// Create test ISOs
+		for i := 0; i < 3; i++ {
+			testutil.CreateAndInsertTestISO(t, env.DB, &testutil.TestISO{
+				Name:    "test",
+				Version: strings.Repeat("v", i+1), // Unique versions
+				Status:  models.StatusComplete,
+			})
+		}
+
+		isos, err := service.ListISOs()
+		if err != nil {
+			t.Fatalf("ListISOs() failed: %v", err)
+		}
+
+		if len(isos) != 3 {
+			t.Errorf("Expected 3 ISOs, got %d", len(isos))
+		}
+	})
+}
+
+func TestISOService_DeleteISO(t *testing.T) {
+	service, env := setupTestISOService(t)
+	defer env.Cleanup()
+
+	t.Run("ExistingISO", func(t *testing.T) {
+		iso := testutil.CreateAndInsertTestISO(t, env.DB, &testutil.TestISO{
+			Name:   "deleteme",
+			Status: models.StatusComplete,
+		})
+
+		err := service.DeleteISO(iso.ID)
+		if err != nil {
+			t.Fatalf("DeleteISO() failed: %v", err)
+		}
+
+		// Verify ISO was deleted
+		_, err = service.GetISO(iso.ID)
+		if err == nil {
+			t.Error("Expected error when getting deleted ISO")
+		}
+	})
+
+	t.Run("NonExistentISO", func(t *testing.T) {
+		err := service.DeleteISO("nonexistent-id")
+		if err == nil {
+			t.Fatal("Expected error for non-existent ISO")
+		}
+	})
+}
+
+func TestISOService_RetryISO(t *testing.T) {
+	service, env := setupTestISOService(t)
+	defer env.Cleanup()
+
+	t.Run("FailedISO", func(t *testing.T) {
+		iso := testutil.CreateAndInsertTestISO(t, env.DB, &testutil.TestISO{
+			Name:   "retry-test",
+			Status: models.StatusFailed,
+		})
+
+		retried, err := service.RetryISO(iso.ID)
+		if err != nil {
+			t.Fatalf("RetryISO() failed: %v", err)
+		}
+
+		if retried.Status != models.StatusPending {
+			t.Errorf("Status should be 'pending', got: %s", retried.Status)
+		}
+		if retried.Progress != 0 {
+			t.Errorf("Progress should be 0, got: %d", retried.Progress)
+		}
+		if retried.ErrorMessage != "" {
+			t.Errorf("ErrorMessage should be empty, got: %s", retried.ErrorMessage)
+		}
+	})
+
+	t.Run("CompleteISO_ShouldFail", func(t *testing.T) {
+		iso := testutil.CreateAndInsertTestISO(t, env.DB, &testutil.TestISO{
+			Name:   "complete-iso",
+			Status: models.StatusComplete,
+		})
+
+		_, err := service.RetryISO(iso.ID)
+		if err == nil {
+			t.Fatal("Expected error when retrying complete ISO")
+		}
+
+		var invalidStateErr *InvalidStateError
+		if !errors.As(err, &invalidStateErr) {
+			t.Errorf("Expected InvalidStateError, got: %T", err)
+		}
+	})
+
+	t.Run("NonExistentISO", func(t *testing.T) {
+		_, err := service.RetryISO("nonexistent-id")
+		if err == nil {
+			t.Fatal("Expected error for non-existent ISO")
+		}
+	})
+}
+
+func TestISOService_UpdateISO(t *testing.T) {
+	service, env := setupTestISOService(t)
+	defer env.Cleanup()
+
+	t.Run("UpdateFailedISO", func(t *testing.T) {
+		iso := testutil.CreateAndInsertTestISO(t, env.DB, &testutil.TestISO{
+			Name:   "failed-iso",
+			Status: models.StatusFailed,
+		})
+
+		newName := "Updated Name"
+		newVersion := "2.0"
+		req := models.UpdateISORequest{
+			Name:    &newName,
+			Version: &newVersion,
+		}
+
+		updated, err := service.UpdateISO(iso.ID, req)
+		if err != nil {
+			t.Fatalf("UpdateISO() failed: %v", err)
+		}
+
+		if updated.Name != "updated-name" {
+			t.Errorf("Name should be normalized to 'updated-name', got: %s", updated.Name)
+		}
+		if updated.Version != "2.0" {
+			t.Errorf("Version should be '2.0', got: %s", updated.Version)
+		}
+		// Should reset to pending
+		if updated.Status != models.StatusPending {
+			t.Errorf("Status should be 'pending', got: %s", updated.Status)
+		}
+	})
+
+	t.Run("UpdateCompleteISO_MetadataOnly", func(t *testing.T) {
+		iso := testutil.CreateAndInsertTestISO(t, env.DB, &testutil.TestISO{
+			Name:    "complete-iso",
+			Version: "1.0",
+			Status:  models.StatusComplete,
+		})
+
+		// Create file for move operation
+		filePath := filepath.Join(env.ISODir, iso.FilePath)
+		os.MkdirAll(filepath.Dir(filePath), 0o755)
+		os.WriteFile(filePath, []byte("test"), 0o644)
+
+		newEdition := "server"
+		req := models.UpdateISORequest{
+			Edition: &newEdition,
+		}
+
+		updated, err := service.UpdateISO(iso.ID, req)
+		if err != nil {
+			t.Fatalf("UpdateISO() failed: %v", err)
+		}
+
+		if updated.Edition != "server" {
+			t.Errorf("Edition should be 'server', got: %s", updated.Edition)
+		}
+		// Status should remain complete
+		if updated.Status != models.StatusComplete {
+			t.Errorf("Status should remain 'complete', got: %s", updated.Status)
+		}
+	})
+
+	t.Run("UpdateDownloadingISO_ShouldFail", func(t *testing.T) {
+		iso := testutil.CreateAndInsertTestISO(t, env.DB, &testutil.TestISO{
+			Name:   "downloading-iso",
+			Status: models.StatusDownloading,
+		})
+
+		newName := "test"
+		req := models.UpdateISORequest{
+			Name: &newName,
+		}
+
+		_, err := service.UpdateISO(iso.ID, req)
+		if err == nil {
+			t.Fatal("Expected error when updating downloading ISO")
+		}
+
+		var invalidStateErr *InvalidStateError
+		if !errors.As(err, &invalidStateErr) {
+			t.Errorf("Expected InvalidStateError, got: %T", err)
+		}
+	})
+
+	t.Run("UpdateCompleteISO_URLChange_ShouldFail", func(t *testing.T) {
+		iso := testutil.CreateAndInsertTestISO(t, env.DB, &testutil.TestISO{
+			Name:   "complete-iso-url",
+			Status: models.StatusComplete,
+		})
+
+		newURL := "https://example.com/new.iso"
+		req := models.UpdateISORequest{
+			DownloadURL: &newURL,
+		}
+
+		_, err := service.UpdateISO(iso.ID, req)
+		if err == nil {
+			t.Fatal("Expected error when changing URL of complete ISO")
+		}
+
+		var invalidStateErr *InvalidStateError
+		if !errors.As(err, &invalidStateErr) {
+			t.Errorf("Expected InvalidStateError, got: %T", err)
+		}
+	})
+
+	t.Run("NonExistentISO", func(t *testing.T) {
+		newName := "test"
+		req := models.UpdateISORequest{
+			Name: &newName,
+		}
+
+		_, err := service.UpdateISO("nonexistent-id", req)
+		if err == nil {
+			t.Fatal("Expected error for non-existent ISO")
+		}
+	})
+}
+
+func TestISOAlreadyExistsError(t *testing.T) {
+	err := &ISOAlreadyExistsError{
+		ExistingISO: &models.ISO{ID: "test-id"},
+	}
+
+	if err.Error() != "ISO already exists" {
+		t.Errorf("Error() = %q, want 'ISO already exists'", err.Error())
+	}
+}
+
+func TestInvalidStateError(t *testing.T) {
+	err := &InvalidStateError{
+		CurrentStatus: "downloading",
+		Message:       "Cannot edit while downloading",
+	}
+
+	errStr := err.Error()
+	if !strings.Contains(errStr, "downloading") {
+		t.Errorf("Error() should contain status, got: %s", errStr)
+	}
+	if !strings.Contains(errStr, "Cannot edit while downloading") {
+		t.Errorf("Error() should contain message, got: %s", errStr)
 	}
 }

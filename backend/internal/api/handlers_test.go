@@ -766,6 +766,244 @@ func TestDeleteISOWithChecksumFile(t *testing.T) {
 	}
 }
 
+// TestUpdateISOSuccessFailedISO tests updating a failed ISO (triggers re-download).
+func TestUpdateISOSuccessFailedISO(t *testing.T) {
+	handlers, database, _, _, cleanup := setupTestHandlers(t)
+	defer cleanup()
+
+	// Create failed ISO
+	iso := &models.ISO{
+		ID:           uuid.New().String(),
+		Name:         "alpine-linux",
+		Version:      "3.19.0",
+		Arch:         "x86_64",
+		FileType:     "iso",
+		DownloadURL:  "http://example.com/alpine-old.iso",
+		Status:       models.StatusFailed,
+		ErrorMessage: "Download failed",
+		CreatedAt:    time.Now(),
+	}
+	iso.ComputeFields()
+	database.CreateISO(iso)
+
+	// Update with new URL (should trigger re-download)
+	newName := "Alpine Linux Updated"
+	newVersion := "3.19.1"
+	newURL := "http://example.com/alpine-new.iso"
+	requestBody := models.UpdateISORequest{
+		Name:        &newName,
+		Version:     &newVersion,
+		DownloadURL: &newURL,
+	}
+	bodyJSON, _ := json.Marshal(requestBody)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request, _ = http.NewRequest("PUT", fmt.Sprintf("/api/isos/%s", iso.ID), bytes.NewBuffer(bodyJSON))
+	c.Request.Header.Set("Content-Type", "application/json")
+	c.Params = gin.Params{{Key: "id", Value: iso.ID}}
+
+	handlers.UpdateISO(c)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("Expected status 200, got: %d, body: %s", w.Code, w.Body.String())
+	}
+
+	apiResp := parseAPIResponse(t, w.Body.Bytes())
+	if !apiResp.Success {
+		t.Error("Expected success response")
+	}
+
+	// Extract ISO from response
+	dataBytes, _ := json.Marshal(apiResp.Data)
+	var response models.ISO
+	json.Unmarshal(dataBytes, &response)
+
+	// Verify fields were updated
+	if response.Name != "alpine-linux-updated" {
+		t.Errorf("Name should be normalized to 'alpine-linux-updated', got: %s", response.Name)
+	}
+	if response.Version != "3.19.1" {
+		t.Errorf("Version should be '3.19.1', got: %s", response.Version)
+	}
+	if response.DownloadURL != newURL {
+		t.Errorf("DownloadURL should be updated, got: %s", response.DownloadURL)
+	}
+	// Failed ISO update should reset status to pending
+	if response.Status != models.StatusPending {
+		t.Errorf("Status should be reset to 'pending', got: %s", response.Status)
+	}
+}
+
+// TestUpdateISOSuccessCompleteISO tests updating a complete ISO (metadata only).
+func TestUpdateISOSuccessCompleteISO(t *testing.T) {
+	handlers, database, _, isoDir, cleanup := setupTestHandlers(t)
+	defer cleanup()
+
+	// Create complete ISO
+	iso := &models.ISO{
+		ID:          uuid.New().String(),
+		Name:        "ubuntu",
+		Version:     "24.04",
+		Arch:        "x86_64",
+		FileType:    "iso",
+		DownloadURL: "http://example.com/ubuntu.iso",
+		Status:      models.StatusComplete,
+		SizeBytes:   1024,
+		CreatedAt:   time.Now(),
+	}
+	iso.ComputeFields()
+	database.CreateISO(iso)
+
+	// Create test file (needed for move operation)
+	filePath := filepath.Join(isoDir, iso.FilePath)
+	os.MkdirAll(filepath.Dir(filePath), 0o755)
+	os.WriteFile(filePath, []byte("test content"), 0o644)
+
+	// Update metadata only
+	newEdition := "server"
+	requestBody := models.UpdateISORequest{
+		Edition: &newEdition,
+	}
+	bodyJSON, _ := json.Marshal(requestBody)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request, _ = http.NewRequest("PUT", fmt.Sprintf("/api/isos/%s", iso.ID), bytes.NewBuffer(bodyJSON))
+	c.Request.Header.Set("Content-Type", "application/json")
+	c.Params = gin.Params{{Key: "id", Value: iso.ID}}
+
+	handlers.UpdateISO(c)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("Expected status 200, got: %d, body: %s", w.Code, w.Body.String())
+	}
+
+	apiResp := parseAPIResponse(t, w.Body.Bytes())
+	if !apiResp.Success {
+		t.Error("Expected success response")
+	}
+
+	// Extract ISO from response
+	dataBytes, _ := json.Marshal(apiResp.Data)
+	var response models.ISO
+	json.Unmarshal(dataBytes, &response)
+
+	// Verify edition was updated
+	if response.Edition != "server" {
+		t.Errorf("Edition should be 'server', got: %s", response.Edition)
+	}
+	// Status should remain complete
+	if response.Status != models.StatusComplete {
+		t.Errorf("Status should remain 'complete', got: %s", response.Status)
+	}
+}
+
+// TestUpdateISONotFound tests updating non-existent ISO.
+func TestUpdateISONotFound(t *testing.T) {
+	handlers, _, _, _, cleanup := setupTestHandlers(t)
+	defer cleanup()
+
+	newName := "test"
+	requestBody := models.UpdateISORequest{
+		Name: &newName,
+	}
+	bodyJSON, _ := json.Marshal(requestBody)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	fakeID := uuid.New().String()
+	c.Request, _ = http.NewRequest("PUT", fmt.Sprintf("/api/isos/%s", fakeID), bytes.NewBuffer(bodyJSON))
+	c.Request.Header.Set("Content-Type", "application/json")
+	c.Params = gin.Params{{Key: "id", Value: fakeID}}
+
+	handlers.UpdateISO(c)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("Expected status 404, got: %d", w.Code)
+	}
+}
+
+// TestUpdateISOInvalidState tests updating ISO in invalid state (downloading/verifying).
+func TestUpdateISOInvalidState(t *testing.T) {
+	handlers, database, _, _, cleanup := setupTestHandlers(t)
+	defer cleanup()
+
+	// Create downloading ISO
+	iso := &models.ISO{
+		ID:          uuid.New().String(),
+		Name:        "test",
+		Version:     "1.0",
+		Arch:        "x86_64",
+		FileType:    "iso",
+		DownloadURL: "http://example.com/test.iso",
+		Status:      models.StatusDownloading, // Cannot update while downloading
+		Progress:    50,
+		CreatedAt:   time.Now(),
+	}
+	iso.ComputeFields()
+	database.CreateISO(iso)
+
+	newName := "updated"
+	requestBody := models.UpdateISORequest{
+		Name: &newName,
+	}
+	bodyJSON, _ := json.Marshal(requestBody)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request, _ = http.NewRequest("PUT", fmt.Sprintf("/api/isos/%s", iso.ID), bytes.NewBuffer(bodyJSON))
+	c.Request.Header.Set("Content-Type", "application/json")
+	c.Params = gin.Params{{Key: "id", Value: iso.ID}}
+
+	handlers.UpdateISO(c)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("Expected status 400, got: %d", w.Code)
+	}
+
+	apiResp := parseAPIResponse(t, w.Body.Bytes())
+	if apiResp.Success {
+		t.Error("Expected error response")
+	}
+	if apiResp.Error == nil || apiResp.Error.Code != ErrCodeInvalidState {
+		t.Error("Expected INVALID_STATE error code")
+	}
+}
+
+// TestUpdateISOInvalidRequestBody tests updating with invalid request body.
+func TestUpdateISOInvalidRequestBody(t *testing.T) {
+	handlers, database, _, _, cleanup := setupTestHandlers(t)
+	defer cleanup()
+
+	// Create ISO
+	iso := &models.ISO{
+		ID:          uuid.New().String(),
+		Name:        "test",
+		Version:     "1.0",
+		Arch:        "x86_64",
+		FileType:    "iso",
+		DownloadURL: "http://example.com/test.iso",
+		Status:      models.StatusFailed,
+		CreatedAt:   time.Now(),
+	}
+	iso.ComputeFields()
+	database.CreateISO(iso)
+
+	// Send invalid JSON
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request, _ = http.NewRequest("PUT", fmt.Sprintf("/api/isos/%s", iso.ID), bytes.NewBufferString("invalid json"))
+	c.Request.Header.Set("Content-Type", "application/json")
+	c.Params = gin.Params{{Key: "id", Value: iso.ID}}
+
+	handlers.UpdateISO(c)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("Expected status 400, got: %d", w.Code)
+	}
+}
+
 // TestDeleteISOWithMultipleChecksumTypes tests cleanup of different checksum types.
 func TestDeleteISOWithMultipleChecksumTypes(t *testing.T) {
 	handlers, database, _, isoDir, cleanup := setupTestHandlers(t)

@@ -21,7 +21,8 @@ func (db *DB) IncrementDownloadCount(id string) error {
 // RecordDownloadEvent records a download event for time-based tracking.
 func (db *DB) RecordDownloadEvent(isoID string, downloadedAt time.Time) error {
 	query := `INSERT INTO download_events (iso_id, downloaded_at) VALUES (?, ?)`
-	_, err := db.conn.Exec(query, isoID, downloadedAt)
+	// Format as RFC3339 for consistent SQLite timestamp handling
+	_, err := db.conn.Exec(query, isoID, downloadedAt.Format(time.RFC3339))
 	if err != nil {
 		return fmt.Errorf("failed to record download event: %w", err)
 	}
@@ -184,13 +185,14 @@ func (db *DB) GetDownloadTrends(period string, days int) (*models.DownloadTrend,
 		dateFormat = "%Y-%m-%d" // Daily format
 	}
 
-	startDate := time.Now().AddDate(0, 0, -days)
+	startDate := time.Now().AddDate(0, 0, -days).Format(time.RFC3339)
 
 	query := fmt.Sprintf(`
 		SELECT strftime('%s', downloaded_at) as period, COUNT(*) as count
 		FROM download_events
-		WHERE downloaded_at >= ?
+		WHERE downloaded_at >= ? AND downloaded_at IS NOT NULL
 		GROUP BY period
+		HAVING period IS NOT NULL
 		ORDER BY period ASC
 	`, dateFormat)
 

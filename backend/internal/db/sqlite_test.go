@@ -1,6 +1,7 @@
 package db
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -436,6 +437,270 @@ func TestDuplicateCompositeKeyRejected(t *testing.T) {
 	if err == nil {
 		t.Error("Expected error when creating ISO with duplicate composite key, got nil")
 	}
+}
+
+func TestISOExists(t *testing.T) {
+	db, cleanup := setupTestDB(t)
+	defer cleanup()
+
+	iso := createTestISO()
+	iso.Name = "alpine"
+	iso.Version = "3.19.1"
+	iso.Arch = "x86_64"
+	iso.Edition = "standard"
+	iso.FileType = "iso"
+	err := db.CreateISO(iso)
+	if err != nil {
+		t.Fatalf("Setup failed: %v", err)
+	}
+
+	t.Run("ExistingISO", func(t *testing.T) {
+		exists, err := db.ISOExists("alpine", "3.19.1", "x86_64", "standard", "iso")
+		if err != nil {
+			t.Fatalf("ISOExists() failed: %v", err)
+		}
+		if !exists {
+			t.Error("Expected ISOExists to return true for existing ISO")
+		}
+	})
+
+	t.Run("NonExistentISO_DifferentName", func(t *testing.T) {
+		exists, err := db.ISOExists("ubuntu", "3.19.1", "x86_64", "standard", "iso")
+		if err != nil {
+			t.Fatalf("ISOExists() failed: %v", err)
+		}
+		if exists {
+			t.Error("Expected ISOExists to return false for non-existent ISO")
+		}
+	})
+
+	t.Run("NonExistentISO_DifferentVersion", func(t *testing.T) {
+		exists, err := db.ISOExists("alpine", "3.20.0", "x86_64", "standard", "iso")
+		if err != nil {
+			t.Fatalf("ISOExists() failed: %v", err)
+		}
+		if exists {
+			t.Error("Expected ISOExists to return false for different version")
+		}
+	})
+
+	t.Run("NonExistentISO_DifferentArch", func(t *testing.T) {
+		exists, err := db.ISOExists("alpine", "3.19.1", "aarch64", "standard", "iso")
+		if err != nil {
+			t.Fatalf("ISOExists() failed: %v", err)
+		}
+		if exists {
+			t.Error("Expected ISOExists to return false for different arch")
+		}
+	})
+
+	t.Run("NonExistentISO_DifferentEdition", func(t *testing.T) {
+		exists, err := db.ISOExists("alpine", "3.19.1", "x86_64", "minimal", "iso")
+		if err != nil {
+			t.Fatalf("ISOExists() failed: %v", err)
+		}
+		if exists {
+			t.Error("Expected ISOExists to return false for different edition")
+		}
+	})
+
+	t.Run("NonExistentISO_DifferentFileType", func(t *testing.T) {
+		exists, err := db.ISOExists("alpine", "3.19.1", "x86_64", "standard", "qcow2")
+		if err != nil {
+			t.Fatalf("ISOExists() failed: %v", err)
+		}
+		if exists {
+			t.Error("Expected ISOExists to return false for different file type")
+		}
+	})
+}
+
+func TestGetISOByComposite(t *testing.T) {
+	db, cleanup := setupTestDB(t)
+	defer cleanup()
+
+	iso := createTestISO()
+	iso.Name = "ubuntu"
+	iso.Version = "24.04"
+	iso.Arch = "x86_64"
+	iso.Edition = "desktop"
+	iso.FileType = "iso"
+	iso.Filename = "ubuntu-24.04-desktop-x86_64.iso"
+	err := db.CreateISO(iso)
+	if err != nil {
+		t.Fatalf("Setup failed: %v", err)
+	}
+
+	t.Run("ExistingISO", func(t *testing.T) {
+		retrieved, err := db.GetISOByComposite("ubuntu", "24.04", "x86_64", "desktop", "iso")
+		if err != nil {
+			t.Fatalf("GetISOByComposite() failed: %v", err)
+		}
+
+		if retrieved.ID != iso.ID {
+			t.Errorf("Expected ID %s, got %s", iso.ID, retrieved.ID)
+		}
+		if retrieved.Name != "ubuntu" {
+			t.Errorf("Expected Name 'ubuntu', got '%s'", retrieved.Name)
+		}
+		if retrieved.Version != "24.04" {
+			t.Errorf("Expected Version '24.04', got '%s'", retrieved.Version)
+		}
+		if retrieved.Arch != "x86_64" {
+			t.Errorf("Expected Arch 'x86_64', got '%s'", retrieved.Arch)
+		}
+		if retrieved.Edition != "desktop" {
+			t.Errorf("Expected Edition 'desktop', got '%s'", retrieved.Edition)
+		}
+		if retrieved.FileType != "iso" {
+			t.Errorf("Expected FileType 'iso', got '%s'", retrieved.FileType)
+		}
+	})
+
+	t.Run("NonExistentISO", func(t *testing.T) {
+		_, err := db.GetISOByComposite("nonexistent", "1.0", "x86_64", "", "iso")
+		if err == nil {
+			t.Error("Expected error for non-existent ISO, got nil")
+		}
+	})
+
+	t.Run("PartialMatch_DifferentEdition", func(t *testing.T) {
+		_, err := db.GetISOByComposite("ubuntu", "24.04", "x86_64", "server", "iso")
+		if err == nil {
+			t.Error("Expected error when edition doesn't match, got nil")
+		}
+	})
+}
+
+func TestListISOsPaginated(t *testing.T) {
+	db, cleanup := setupTestDB(t)
+	defer cleanup()
+
+	// Create 25 ISOs for pagination testing with unique composite keys
+	for i := 0; i < 25; i++ {
+		iso := createTestISO()
+		iso.Name = "test-iso"
+		iso.Version = fmt.Sprintf("1.0.%d", i) // Unique version for each
+		iso.Arch = "x86_64"
+		iso.Edition = ""
+		iso.FileType = "iso"
+		iso.Filename = fmt.Sprintf("test-iso-1.0.%d-x86_64.iso", i)
+		db.CreateISO(iso)
+		time.Sleep(2 * time.Millisecond) // Ensure different timestamps
+	}
+
+	t.Run("DefaultPagination", func(t *testing.T) {
+		result, err := db.ListISOsPaginated(ListISOsParams{})
+		if err != nil {
+			t.Fatalf("ListISOsPaginated() failed: %v", err)
+		}
+
+		// Default page size should be 10
+		if len(result.ISOs) != 10 {
+			t.Errorf("Expected 10 ISOs, got %d", len(result.ISOs))
+		}
+		if result.Total != 25 {
+			t.Errorf("Expected total 25, got %d", result.Total)
+		}
+		if result.Page != 1 {
+			t.Errorf("Expected page 1, got %d", result.Page)
+		}
+		if result.TotalPages != 3 {
+			t.Errorf("Expected 3 total pages, got %d", result.TotalPages)
+		}
+	})
+
+	t.Run("CustomPageSize", func(t *testing.T) {
+		result, err := db.ListISOsPaginated(ListISOsParams{
+			Page:     1,
+			PageSize: 5,
+		})
+		if err != nil {
+			t.Fatalf("ListISOsPaginated() failed: %v", err)
+		}
+
+		if len(result.ISOs) != 5 {
+			t.Errorf("Expected 5 ISOs, got %d", len(result.ISOs))
+		}
+		if result.TotalPages != 5 {
+			t.Errorf("Expected 5 total pages, got %d", result.TotalPages)
+		}
+	})
+
+	t.Run("SecondPage", func(t *testing.T) {
+		result, err := db.ListISOsPaginated(ListISOsParams{
+			Page:     2,
+			PageSize: 10,
+		})
+		if err != nil {
+			t.Fatalf("ListISOsPaginated() failed: %v", err)
+		}
+
+		if len(result.ISOs) != 10 {
+			t.Errorf("Expected 10 ISOs on page 2, got %d", len(result.ISOs))
+		}
+		if result.Page != 2 {
+			t.Errorf("Expected page 2, got %d", result.Page)
+		}
+	})
+
+	t.Run("LastPage", func(t *testing.T) {
+		result, err := db.ListISOsPaginated(ListISOsParams{
+			Page:     3,
+			PageSize: 10,
+		})
+		if err != nil {
+			t.Fatalf("ListISOsPaginated() failed: %v", err)
+		}
+
+		// Last page should have 5 items (25 total, 10 per page)
+		if len(result.ISOs) != 5 {
+			t.Errorf("Expected 5 ISOs on last page, got %d", len(result.ISOs))
+		}
+	})
+
+	t.Run("MaxPageSize", func(t *testing.T) {
+		result, err := db.ListISOsPaginated(ListISOsParams{
+			PageSize: 200, // Above max of 100
+		})
+		if err != nil {
+			t.Fatalf("ListISOsPaginated() failed: %v", err)
+		}
+
+		// Should be capped at 100
+		if result.PageSize != 100 {
+			t.Errorf("Expected page size to be capped at 100, got %d", result.PageSize)
+		}
+	})
+
+	t.Run("SortByName", func(t *testing.T) {
+		result, err := db.ListISOsPaginated(ListISOsParams{
+			SortBy:  "name",
+			SortDir: "asc",
+		})
+		if err != nil {
+			t.Fatalf("ListISOsPaginated() failed: %v", err)
+		}
+
+		if len(result.ISOs) == 0 {
+			t.Fatal("Expected ISOs to be returned")
+		}
+		// All ISOs have same name, so just verify no error
+	})
+
+	t.Run("InvalidSortColumn", func(t *testing.T) {
+		result, err := db.ListISOsPaginated(ListISOsParams{
+			SortBy: "invalid_column",
+		})
+		if err != nil {
+			t.Fatalf("ListISOsPaginated() failed: %v", err)
+		}
+
+		// Should default to created_at
+		if len(result.ISOs) == 0 {
+			t.Error("Expected ISOs to be returned")
+		}
+	})
 }
 
 func TestConcurrentOperations(t *testing.T) {
