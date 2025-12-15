@@ -1,9 +1,12 @@
-import { FolderOpen, HardDrive } from 'lucide-react';
-import { Link } from 'react-router';
+import { BarChart3, FolderOpen, HardDrive, Package } from 'lucide-react';
+import { Link, useLocation } from 'react-router';
 import { DarkModeToggle } from '@/components/DarkModeToggle';
 import { Button } from '@/components/ui/button';
 
 export function Header() {
+  const location = useLocation();
+  const isStatsPage = location.pathname === '/stats';
+
   return (
     <header className="border-b border-border bg-card text-card-foreground">
       <div className="container mx-auto px-4 py-4">
@@ -21,6 +24,21 @@ export function Header() {
             </div>
           </Link>
           <div className="flex items-center gap-2">
+            {isStatsPage ? (
+              <Button asChild variant="outline">
+                <Link to="/isos">
+                  <Package className="w-4 h-4" />
+                  ISOs
+                </Link>
+              </Button>
+            ) : (
+              <Button asChild variant="outline">
+                <Link to="/stats">
+                  <BarChart3 className="w-4 h-4" />
+                  Statistics
+                </Link>
+              </Button>
+            )}
             <Button asChild variant="outline">
               <a href="/images/" target="_blank" rel="noopener noreferrer">
                 <FolderOpen className="w-4 h-4" />

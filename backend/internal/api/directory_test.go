@@ -40,7 +40,7 @@ func TestDirectoryHandlerListRoot(t *testing.T) {
 	c.Request, _ = http.NewRequest("GET", "/images/", http.NoBody)
 	c.Params = gin.Params{{Key: "filepath", Value: "/"}}
 
-	handler := DirectoryHandler(isoDir)
+	handler := DirectoryHandler(&DirectoryHandlerConfig{ISODir: isoDir})
 	handler(c)
 
 	if w.Code != http.StatusOK {
@@ -78,7 +78,7 @@ func TestDirectoryHandlerListSubdirectory(t *testing.T) {
 	c.Request, _ = http.NewRequest("GET", "/images/alpine", http.NoBody)
 	c.Params = gin.Params{{Key: "filepath", Value: "/alpine"}}
 
-	handler := DirectoryHandler(isoDir)
+	handler := DirectoryHandler(&DirectoryHandlerConfig{ISODir: isoDir})
 	handler(c)
 
 	if w.Code != http.StatusOK {
@@ -107,7 +107,7 @@ func TestDirectoryHandlerServeFile(t *testing.T) {
 	c.Request, _ = http.NewRequest("GET", "/images/alpine/3.19.1/x86_64/alpine.iso", http.NoBody)
 	c.Params = gin.Params{{Key: "filepath", Value: "/alpine/3.19.1/x86_64/alpine.iso"}}
 
-	handler := DirectoryHandler(isoDir)
+	handler := DirectoryHandler(&DirectoryHandlerConfig{ISODir: isoDir})
 	handler(c)
 
 	if w.Code != http.StatusOK {
@@ -130,7 +130,7 @@ func TestDirectoryHandlerFileNotFound(t *testing.T) {
 	c.Request, _ = http.NewRequest("GET", "/images/nonexistent.iso", http.NoBody)
 	c.Params = gin.Params{{Key: "filepath", Value: "/nonexistent.iso"}}
 
-	handler := DirectoryHandler(isoDir)
+	handler := DirectoryHandler(&DirectoryHandlerConfig{ISODir: isoDir})
 	handler(c)
 
 	if w.Code != http.StatusNotFound {
@@ -148,7 +148,7 @@ func TestDirectoryHandlerDirectoryNotFound(t *testing.T) {
 	c.Request, _ = http.NewRequest("GET", "/images/nonexistent/", http.NoBody)
 	c.Params = gin.Params{{Key: "filepath", Value: "/nonexistent/"}}
 
-	handler := DirectoryHandler(isoDir)
+	handler := DirectoryHandler(&DirectoryHandlerConfig{ISODir: isoDir})
 	handler(c)
 
 	if w.Code != http.StatusNotFound {
@@ -170,7 +170,7 @@ func TestDirectoryHandlerHiddenFilesSkipped(t *testing.T) {
 	c.Request, _ = http.NewRequest("GET", "/images/", http.NoBody)
 	c.Params = gin.Params{{Key: "filepath", Value: "/"}}
 
-	handler := DirectoryHandler(isoDir)
+	handler := DirectoryHandler(&DirectoryHandlerConfig{ISODir: isoDir})
 	handler(c)
 
 	body := w.Body.String()
@@ -223,7 +223,7 @@ func TestDirectoryHandlerSorting(t *testing.T) {
 	c.Request, _ = http.NewRequest("GET", "/images/", http.NoBody)
 	c.Params = gin.Params{{Key: "filepath", Value: "/"}}
 
-	handler := DirectoryHandler(tmpDir)
+	handler := DirectoryHandler(&DirectoryHandlerConfig{ISODir: tmpDir})
 	handler(c)
 
 	body := w.Body.String()
@@ -252,7 +252,7 @@ func TestDirectoryHandlerEmptyDirectory(t *testing.T) {
 	c.Request, _ = http.NewRequest("GET", "/images/", http.NoBody)
 	c.Params = gin.Params{{Key: "filepath", Value: "/"}}
 
-	handler := DirectoryHandler(tmpDir)
+	handler := DirectoryHandler(&DirectoryHandlerConfig{ISODir: tmpDir})
 	handler(c)
 
 	if w.Code != http.StatusOK {
@@ -280,7 +280,7 @@ func TestDirectoryHandlerContentType(t *testing.T) {
 	c.Request, _ = http.NewRequest("GET", "/images/", http.NoBody)
 	c.Params = gin.Params{{Key: "filepath", Value: "/"}}
 
-	handler := DirectoryHandler(tmpDir)
+	handler := DirectoryHandler(&DirectoryHandlerConfig{ISODir: tmpDir})
 	handler(c)
 
 	contentType := w.Header().Get("Content-Type")
@@ -299,7 +299,7 @@ func TestDirectoryHandlerNestedPath(t *testing.T) {
 	c.Request, _ = http.NewRequest("GET", "/images/alpine/3.19.1/x86_64", http.NoBody)
 	c.Params = gin.Params{{Key: "filepath", Value: "/alpine/3.19.1/x86_64"}}
 
-	handler := DirectoryHandler(isoDir)
+	handler := DirectoryHandler(&DirectoryHandlerConfig{ISODir: isoDir})
 	handler(c)
 
 	if w.Code != http.StatusOK {
@@ -336,7 +336,7 @@ func TestDirectoryHandlerFileTypeIcons(t *testing.T) {
 	c.Request, _ = http.NewRequest("GET", "/images/", http.NoBody)
 	c.Params = gin.Params{{Key: "filepath", Value: "/"}}
 
-	handler := DirectoryHandler(tmpDir)
+	handler := DirectoryHandler(&DirectoryHandlerConfig{ISODir: tmpDir})
 	handler(c)
 
 	body := w.Body.String()
@@ -391,7 +391,7 @@ func TestDirectoryHandlerDirectorySizeDisplay(t *testing.T) {
 	c.Request, _ = http.NewRequest("GET", "/images/", http.NoBody)
 	c.Params = gin.Params{{Key: "filepath", Value: "/"}}
 
-	handler := DirectoryHandler(tmpDir)
+	handler := DirectoryHandler(&DirectoryHandlerConfig{ISODir: tmpDir})
 	handler(c)
 
 	body := w.Body.String()

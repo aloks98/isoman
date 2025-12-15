@@ -10,7 +10,11 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"time"
+
+	"linux-iso-manager/internal/db"
+	"linux-iso-manager/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
@@ -29,8 +33,47 @@ type FileInfo struct {
 	IsDir        bool
 }
 
+// DirectoryHandlerConfig holds dependencies for the directory handler.
+type DirectoryHandlerConfig struct {
+	ISODir       string
+	StatsService *service.StatsService
+	DB           *db.DB
+}
+
+// isTrackableFile checks if the file should be tracked for download statistics.
+// Only tracks actual ISO/image files, not checksum files.
+func isTrackableFile(filename string) bool {
+	ext := strings.ToLower(filepath.Ext(filename))
+	trackableExtensions := []string{".iso", ".qcow2", ".vmdk", ".img"}
+	for _, trackable := range trackableExtensions {
+		if ext == trackable {
+			return true
+		}
+	}
+	return false
+}
+
+// trackDownload records the download asynchronously.
+func trackDownload(cfg *DirectoryHandlerConfig, filePath string) {
+	// Look up the ISO by file path
+	iso, err := cfg.DB.GetISOByFilePath(filePath)
+	if err != nil {
+		slog.Warn("failed to lookup ISO for download tracking", slog.String("path", filePath), slog.Any("error", err))
+		return
+	}
+	if iso == nil {
+		// ISO not found in database - might be a manually added file
+		return
+	}
+
+	// Record the download
+	if err := cfg.StatsService.RecordDownload(iso.ID); err != nil {
+		slog.Warn("failed to record download", slog.String("iso_id", iso.ID), slog.Any("error", err))
+	}
+}
+
 // DirectoryHandler serves Apache-style directory listing for /images/.
-func DirectoryHandler(isoDir string) gin.HandlerFunc {
+func DirectoryHandler(cfg *DirectoryHandlerConfig) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Get the requested path (Gin includes leading slash in wildcard)
 		requestPath := c.Param("filepath")
@@ -45,7 +88,7 @@ func DirectoryHandler(isoDir string) gin.HandlerFunc {
 		}
 
 		// Construct full filesystem path
-		fullPath := filepath.Join(isoDir, requestPath)
+		fullPath := filepath.Join(cfg.ISODir, requestPath)
 
 		// Check if path exists
 		info, err := os.Stat(fullPath)
@@ -56,6 +99,10 @@ func DirectoryHandler(isoDir string) gin.HandlerFunc {
 
 		// If it's a file, serve it directly
 		if !info.IsDir() {
+			// Track download if it's a trackable ISO file
+			if isTrackableFile(requestPath) && cfg.StatsService != nil && cfg.DB != nil {
+				go trackDownload(cfg, requestPath)
+			}
 			c.File(fullPath)
 			return
 		}

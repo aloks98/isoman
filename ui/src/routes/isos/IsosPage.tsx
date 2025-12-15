@@ -1,13 +1,26 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
+import type { PaginationState, SortingState } from '@tanstack/react-table';
 import { useCallback, useState } from 'react';
 import { EditIsoModal } from '@/components/EditIsoModal';
 import { IsoList } from '@/components/IsoList';
 import { useWebSocket } from '@/hooks/useWebSocket';
-import { createISO, deleteISO, listISOs, retryISO, updateISO } from '@/lib/api';
+import {
+  createISO,
+  deleteISO,
+  listISOsPaginated,
+  retryISO,
+  updateISO,
+} from '@/lib/api';
 import { useAppStore } from '@/stores';
 import type {
   CreateISORequest,
   ISO,
+  PaginationInfo,
   UpdateISORequest,
   WSProgressMessage,
 } from '@/types/iso';
@@ -21,46 +34,70 @@ export function IsosPage() {
   const viewMode = useAppStore((state) => state.viewMode);
   const setViewMode = useAppStore((state) => state.setViewMode);
 
+  // Sorting state (TanStack Table format)
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: 'created_at', desc: true },
+  ]);
+
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  // Convert sorting state to API params
+  const sortBy = sorting.length > 0 ? sorting[0].id : 'created_at';
+  const sortDir = sorting.length > 0 && sorting[0].desc ? 'desc' : 'asc';
+
   // Fetch ISOs with React Query
-  const {
-    data: isos = [],
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ['isos'],
-    queryFn: listISOs,
+  const { data, isLoading, isFetching, error } = useQuery({
+    queryKey: ['isos', { page, pageSize, sortBy, sortDir }],
+    queryFn: () => listISOsPaginated({ page, pageSize, sortBy, sortDir }),
+    placeholderData: keepPreviousData,
   });
+
+  const isos = data?.isos ?? [];
+  const pagination: PaginationInfo = data?.pagination ?? {
+    page: 1,
+    page_size: 10,
+    total: 0,
+    total_pages: 0,
+  };
 
   // Handle WebSocket progress updates
   const handleWebSocketMessage = useCallback(
     (message: WSProgressMessage) => {
       if (message.type === 'progress') {
-        queryClient.setQueryData(['isos'], (oldData: ISO[] | undefined) => {
-          if (!oldData) return oldData;
+        // Update the ISO in the current page's data
+        queryClient.setQueryData(
+          ['isos', { page, pageSize, sortBy, sortDir }],
+          (
+            oldData: { isos: ISO[]; pagination: PaginationInfo } | undefined,
+          ) => {
+            if (!oldData) return oldData;
 
-          const updatedIsos = oldData.map((iso) =>
-            iso.id === message.payload.id
-              ? {
-                  ...iso,
-                  progress: message.payload.progress,
-                  status: message.payload.status,
-                }
-              : iso,
-          );
+            const updatedIsos = oldData.isos.map((iso) =>
+              iso.id === message.payload.id
+                ? {
+                    ...iso,
+                    progress: message.payload.progress,
+                    status: message.payload.status,
+                  }
+                : iso,
+            );
 
-          // If status is complete or failed, refetch to get updated fields (error_message, checksum, etc.)
-          if (
-            message.payload.status === 'complete' ||
-            message.payload.status === 'failed'
-          ) {
-            queryClient.invalidateQueries({ queryKey: ['isos'] });
-          }
+            // If status is complete or failed, refetch to get updated fields
+            if (
+              message.payload.status === 'complete' ||
+              message.payload.status === 'failed'
+            ) {
+              queryClient.invalidateQueries({ queryKey: ['isos'] });
+            }
 
-          return updatedIsos;
-        });
+            return { ...oldData, isos: updatedIsos };
+          },
+        );
       }
     },
-    [queryClient],
+    [queryClient, page, pageSize, sortBy, sortDir],
   );
 
   // Set up WebSocket connection
@@ -120,11 +157,27 @@ export function IsosPage() {
     await updateMutation.mutateAsync({ id, request });
   };
 
+  // Handle pagination changes from DataGrid (0-based pageIndex)
+  const handlePaginationChange = useCallback(
+    (newPagination: PaginationState) => {
+      setPage(newPagination.pageIndex + 1); // Convert to 1-based
+      setPageSize(newPagination.pageSize);
+    },
+    [],
+  );
+
+  // Handle sorting changes from DataGrid
+  const handleSortingChange = useCallback((newSorting: SortingState) => {
+    setSorting(newSorting);
+    setPage(1); // Reset to first page on sort change
+  }, []);
+
   return (
     <>
       <IsoList
         isos={isos}
         isLoading={isLoading}
+        isFetching={isFetching}
         error={error as Error | null}
         viewMode={viewMode}
         onViewModeChange={setViewMode}
@@ -132,6 +185,10 @@ export function IsosPage() {
         onDeleteISO={handleDelete}
         onRetryISO={handleRetry}
         onEditISO={handleEdit}
+        pagination={pagination}
+        sorting={sorting}
+        onPaginationChange={handlePaginationChange}
+        onSortingChange={handleSortingChange}
       />
       {isoToEdit && (
         <EditIsoModal

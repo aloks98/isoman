@@ -115,6 +115,11 @@ func (s *ISOService) ListISOs() ([]models.ISO, error) {
 	return s.db.ListISOs()
 }
 
+// ListISOsPaginated retrieves ISOs with pagination and sorting.
+func (s *ISOService) ListISOsPaginated(params db.ListISOsParams) (*db.ListISOsResult, error) {
+	return s.db.ListISOsPaginated(params)
+}
+
 // DeleteISO deletes an ISO and its files.
 func (s *ISOService) DeleteISO(id string) error {
 	// Get ISO from database to validate it exists

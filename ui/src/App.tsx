@@ -3,6 +3,7 @@ import { MainLayout } from './layouts/MainLayout';
 import { IsosPage } from './routes/isos/IsosPage';
 import { NotFound } from './routes/NotFound';
 import { Root } from './routes/Root';
+import { StatsPage } from './routes/stats/StatsPage';
 import './index.css';
 
 export default function App() {
@@ -12,6 +13,7 @@ export default function App() {
         <Route path="/" element={<Root />} />
         <Route element={<MainLayout />}>
           <Route path="/isos" element={<IsosPage />} />
+          <Route path="/stats" element={<StatsPage />} />
         </Route>
         <Route path="*" element={<NotFound />} />
       </Routes>

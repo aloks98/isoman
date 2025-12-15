@@ -1,16 +1,12 @@
 import {
   type ColumnDef,
-  type ColumnFiltersState,
-  flexRender,
   getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
+  type OnChangeFn,
+  type PaginationState,
   type SortingState,
   useReactTable,
 } from '@tanstack/react-table';
 import {
-  ArrowUpDown,
   Check,
   Copy,
   Download,
@@ -20,8 +16,12 @@ import {
   RefreshCw,
   Trash2,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
+import { DataGrid, DataGridContainer } from '@/components/ui/data-grid';
+import { DataGridColumnHeader } from '@/components/ui/data-grid-column-header';
+import { DataGridPagination } from '@/components/ui/data-grid-pagination';
+import { DataGridTable } from '@/components/ui/data-grid-table';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,48 +29,65 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useCopyWithFeedback } from '@/hooks/useCopyWithFeedback';
 import { formatBytes, formatDateShort } from '@/lib/format';
 import { getFullChecksumUrl, getFullDownloadUrl } from '@/lib/iso-utils';
 import { getStatusColor } from '@/lib/status-config';
-import type { ISO } from '../types/iso';
+import type { ISO, PaginationInfo } from '../types/iso';
 import { StatusBadge } from './StatusBadge';
 
 interface IsoListViewProps {
   isos: ISO[];
+  isFetching: boolean;
   onDelete: (id: string) => void;
   onRetry: (id: string) => void;
   onEdit: (iso: ISO) => void;
+  pagination: PaginationInfo;
+  sorting: SortingState;
+  onPaginationChange: (pagination: PaginationState) => void;
+  onSortingChange: (sorting: SortingState) => void;
 }
 
 export function IsoListView({
   isos,
+  isFetching,
   onDelete,
   onRetry,
   onEdit,
+  pagination,
+  sorting,
+  onPaginationChange,
+  onSortingChange,
 }: IsoListViewProps) {
   const { copyToClipboard, copiedKey } = useCopyWithFeedback();
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+
+  // Derive TanStack Table pagination state from server pagination (0-based pageIndex)
+  const paginationState: PaginationState = {
+    pageIndex: pagination.page - 1,
+    pageSize: pagination.page_size,
+  };
+
+  // Handle pagination changes from DataGrid
+  const handlePaginationChange: OnChangeFn<PaginationState> = (updater) => {
+    const newState =
+      typeof updater === 'function' ? updater(paginationState) : updater;
+    onPaginationChange(newState);
+  };
+
+  // Handle sorting changes from DataGrid
+  const handleSortingChange: OnChangeFn<SortingState> = (updater) => {
+    const newState = typeof updater === 'function' ? updater(sorting) : updater;
+    onSortingChange(newState);
+  };
 
   const columns = useMemo<ColumnDef<ISO>[]>(
     () => [
       {
         accessorKey: 'name',
-        header: ({ column }) => {
-          return (
-            <Button
-              variant="ghost"
-              onClick={() =>
-                column.toggleSorting(column.getIsSorted() === 'asc')
-              }
-              className="h-8 px-2 -ml-2"
-            >
-              Name
-              <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
-          );
-        },
+        header: ({ column }) => (
+          <DataGridColumnHeader column={column} title="Name" />
+        ),
         cell: ({ row }) => {
           const iso = row.original;
           return (
@@ -84,55 +101,53 @@ export function IsoListView({
             </div>
           );
         },
+        meta: {
+          skeleton: (
+            <div className="space-y-1">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-3 w-20" />
+            </div>
+          ),
+        },
       },
       {
         accessorKey: 'status',
-        header: 'Status',
+        header: ({ column }) => (
+          <DataGridColumnHeader column={column} title="Status" />
+        ),
         cell: ({ row }) => <StatusBadge status={row.original.status} />,
+        meta: {
+          skeleton: <Skeleton className="h-5 w-20 rounded-full" />,
+        },
       },
       {
         accessorKey: 'version',
-        header: ({ column }) => {
-          return (
-            <Button
-              variant="ghost"
-              onClick={() =>
-                column.toggleSorting(column.getIsSorted() === 'asc')
-              }
-              className="h-8 px-2 -ml-2"
-            >
-              Version
-              <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
-          );
-        },
+        header: ({ column }) => (
+          <DataGridColumnHeader column={column} title="Version" />
+        ),
         cell: ({ row }) => (
           <span className="font-mono text-sm">{row.original.version}</span>
         ),
+        meta: {
+          skeleton: <Skeleton className="h-4 w-16" />,
+        },
       },
       {
         accessorKey: 'arch',
         header: 'Arch',
+        enableSorting: false,
         cell: ({ row }) => (
           <span className="font-mono text-sm">{row.original.arch}</span>
         ),
+        meta: {
+          skeleton: <Skeleton className="h-4 w-14" />,
+        },
       },
       {
         accessorKey: 'size_bytes',
-        header: ({ column }) => {
-          return (
-            <Button
-              variant="ghost"
-              onClick={() =>
-                column.toggleSorting(column.getIsSorted() === 'asc')
-              }
-              className="h-8 px-2 -ml-2"
-            >
-              Size
-              <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
-          );
-        },
+        header: ({ column }) => (
+          <DataGridColumnHeader column={column} title="Size" />
+        ),
         cell: ({ row }) => (
           <span className="font-mono text-sm">
             {row.original.size_bytes > 0
@@ -140,10 +155,14 @@ export function IsoListView({
               : '-'}
           </span>
         ),
+        meta: {
+          skeleton: <Skeleton className="h-4 w-16" />,
+        },
       },
       {
         accessorKey: 'progress',
         header: 'Progress',
+        enableSorting: false,
         cell: ({ row }) => {
           const iso = row.original;
           if (iso.status === 'complete' || iso.status === 'failed') return null;
@@ -161,32 +180,33 @@ export function IsoListView({
             </div>
           );
         },
+        meta: {
+          skeleton: (
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-1.5 w-24 rounded-full" />
+              <Skeleton className="h-3 w-8" />
+            </div>
+          ),
+        },
       },
       {
         accessorKey: 'created_at',
-        header: ({ column }) => {
-          return (
-            <Button
-              variant="ghost"
-              onClick={() =>
-                column.toggleSorting(column.getIsSorted() === 'asc')
-              }
-              className="h-8 px-2 -ml-2"
-            >
-              Created
-              <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
-          );
-        },
+        header: ({ column }) => (
+          <DataGridColumnHeader column={column} title="Created" />
+        ),
         cell: ({ row }) => (
           <span className="font-mono text-xs text-muted-foreground">
             {formatDateShort(row.original.created_at)}
           </span>
         ),
+        meta: {
+          skeleton: <Skeleton className="h-3 w-24" />,
+        },
       },
       {
         id: 'actions',
         header: () => <div className="text-right">Actions</div>,
+        enableSorting: false,
         cell: ({ row }) => {
           const iso = row.original;
           const checksumUrl = getFullChecksumUrl(
@@ -281,6 +301,15 @@ export function IsoListView({
             </div>
           );
         },
+        meta: {
+          headerClassName: 'text-right',
+          skeleton: (
+            <div className="flex items-center justify-end gap-1">
+              <Skeleton className="h-8 w-8 rounded" />
+              <Skeleton className="h-8 w-8 rounded" />
+            </div>
+          ),
+        },
       },
     ],
     [copiedKey, onDelete, onRetry, onEdit, copyToClipboard],
@@ -291,112 +320,38 @@ export function IsoListView({
     columns,
     getRowId: (row) => row.id,
     getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
+    manualPagination: true,
+    manualSorting: true,
+    pageCount: pagination.total_pages,
     state: {
       sorting,
-      columnFilters,
+      pagination: paginationState,
     },
-    initialState: {
-      pagination: {
-        pageSize: 10,
-      },
-    },
+    onSortingChange: handleSortingChange,
+    onPaginationChange: handlePaginationChange,
   });
 
   return (
-    <div className="space-y-4">
-      <div className="border border-border rounded-lg overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-muted/50 border-b border-border">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    className="text-left px-4 py-3 text-sm font-medium"
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
-          <tbody className="divide-y divide-border">
-            {table.getRowModel().rows.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={columns.length}
-                  className="px-4 py-8 text-center text-muted-foreground"
-                >
-                  No ISOs found
-                </td>
-              </tr>
-            ) : (
-              table.getRowModel().rows.map((row) => (
-                <tr
-                  key={row.id}
-                  className="hover:bg-accent/50 transition-colors"
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="px-4 py-3">
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </td>
-                  ))}
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Pagination */}
-      {table.getPageCount() > 1 && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
-            Showing{' '}
-            {table.getState().pagination.pageIndex *
-              table.getState().pagination.pageSize +
-              1}{' '}
-            to{' '}
-            {Math.min(
-              (table.getState().pagination.pageIndex + 1) *
-                table.getState().pagination.pageSize,
-              table.getFilteredRowModel().rows.length,
-            )}{' '}
-            of {table.getFilteredRowModel().rows.length} entries
+    <DataGridContainer>
+      <DataGrid
+        table={table}
+        recordCount={pagination.total}
+        isLoading={isFetching}
+        loadingMode="skeleton"
+        tableLayout={{
+          rowBorder: true,
+          headerBackground: true,
+          width: 'fixed',
+        }}
+        emptyMessage="No ISOs found"
+      >
+        <DataGridTable />
+        {pagination.total > 0 && (
+          <div className="px-4 py-2 border-t border-border">
+            <DataGridPagination sizes={[10, 25, 50, 100]} />
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-            >
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
-      )}
-    </div>
+        )}
+      </DataGrid>
+    </DataGridContainer>
   );
 }

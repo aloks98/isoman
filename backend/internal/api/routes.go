@@ -2,6 +2,7 @@ package api
 
 import (
 	"linux-iso-manager/internal/config"
+	"linux-iso-manager/internal/db"
 	"linux-iso-manager/internal/service"
 	"linux-iso-manager/internal/ws"
 
@@ -10,7 +11,7 @@ import (
 )
 
 // SetupRoutes configures all routes and middleware.
-func SetupRoutes(isoService *service.ISOService, isoDir string, wsHub *ws.Hub, cfg *config.Config) *gin.Engine {
+func SetupRoutes(isoService *service.ISOService, statsService *service.StatsService, database *db.DB, isoDir string, wsHub *ws.Hub, cfg *config.Config) *gin.Engine {
 	// Set Gin to release mode for production (can be overridden by GIN_MODE env var)
 	// gin.SetMode(gin.ReleaseMode)
 
@@ -25,6 +26,7 @@ func SetupRoutes(isoService *service.ISOService, isoDir string, wsHub *ws.Hub, c
 
 	// Create handlers
 	handlers := NewHandlers(isoService, isoDir)
+	statsHandlers := NewStatsHandlers(statsService)
 
 	// API routes
 	api := router.Group("/api")
@@ -36,6 +38,10 @@ func SetupRoutes(isoService *service.ISOService, isoDir string, wsHub *ws.Hub, c
 		api.PUT("/isos/:id", handlers.UpdateISO)
 		api.DELETE("/isos/:id", handlers.DeleteISO)
 		api.POST("/isos/:id/retry", handlers.RetryISO)
+
+		// Statistics
+		api.GET("/stats", statsHandlers.GetStats)
+		api.GET("/stats/trends", statsHandlers.GetDownloadTrends)
 	}
 
 	// WebSocket endpoint
@@ -46,9 +52,14 @@ func SetupRoutes(isoService *service.ISOService, isoDir string, wsHub *ws.Hub, c
 	// Health check
 	router.GET("/health", handlers.HealthCheck)
 
-	// Static file serving and directory listing
+	// Static file serving and directory listing with download tracking
 	// This handles both /images/ (directory listing) and /images/* (file downloads)
-	router.GET("/images/*filepath", DirectoryHandler(isoDir))
+	dirConfig := &DirectoryHandlerConfig{
+		ISODir:       isoDir,
+		StatsService: statsService,
+		DB:           database,
+	}
+	router.GET("/images/*filepath", DirectoryHandler(dirConfig))
 
 	// Serve frontend static files
 	// In production, frontend is built into ui/dist

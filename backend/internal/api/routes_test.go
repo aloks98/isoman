@@ -7,11 +7,19 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/gin-gonic/gin"
+
 	"linux-iso-manager/internal/download"
 	"linux-iso-manager/internal/service"
 	"linux-iso-manager/internal/testutil"
 	"linux-iso-manager/internal/ws"
 )
+
+// Helper function to create SetupRoutes with test defaults
+func setupTestRouter(env *testutil.TestEnv, isoService *service.ISOService, wsHub *ws.Hub) *gin.Engine {
+	statsService := service.NewStatsService(env.DB)
+	return SetupRoutes(isoService, statsService, env.DB, env.ISODir, wsHub, env.Config)
+}
 
 func TestSetupRoutes(t *testing.T) {
 	env := testutil.SetupTestEnvironment(t)
@@ -23,7 +31,7 @@ func TestSetupRoutes(t *testing.T) {
 	isoService := service.NewISOService(env.DB, manager, env.ISODir)
 
 	wsHub := ws.NewHub()
-	router := SetupRoutes(isoService, env.ISODir, wsHub, env.Config)
+	router := setupTestRouter(env, isoService, wsHub)
 
 	if router == nil {
 		t.Fatal("Expected router to be created, got nil")
@@ -39,7 +47,7 @@ func TestAPIRoutes(t *testing.T) {
 	isoService := service.NewISOService(env.DB, manager, env.ISODir)
 
 	wsHub := ws.NewHub()
-	router := SetupRoutes(isoService, env.ISODir, wsHub, env.Config)
+	router := setupTestRouter(env, isoService, wsHub)
 
 	tests := []struct {
 		name       string
@@ -108,7 +116,7 @@ func TestAPIRouteNotFound(t *testing.T) {
 	isoService := service.NewISOService(env.DB, manager, env.ISODir)
 
 	wsHub := ws.NewHub()
-	router := SetupRoutes(isoService, env.ISODir, wsHub, env.Config)
+	router := setupTestRouter(env, isoService, wsHub)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/nonexistent", http.NoBody)
 	w := httptest.NewRecorder()
@@ -134,7 +142,7 @@ func TestCORSConfiguration(t *testing.T) {
 	isoService := service.NewISOService(env.DB, manager, env.ISODir)
 
 	wsHub := ws.NewHub()
-	router := SetupRoutes(isoService, env.ISODir, wsHub, env.Config)
+	router := setupTestRouter(env, isoService, wsHub)
 
 	// Test CORS preflight request
 	req := httptest.NewRequest(http.MethodOptions, "/api/isos", http.NoBody)
@@ -174,7 +182,7 @@ func TestNoRouteHandler(t *testing.T) {
 	isoService := service.NewISOService(env.DB, manager, env.ISODir)
 
 	wsHub := ws.NewHub()
-	router := SetupRoutes(isoService, env.ISODir, wsHub, env.Config)
+	router := setupTestRouter(env, isoService, wsHub)
 
 	tests := []struct {
 		name           string
@@ -249,7 +257,7 @@ func TestHealthEndpoint(t *testing.T) {
 	isoService := service.NewISOService(env.DB, manager, env.ISODir)
 
 	wsHub := ws.NewHub()
-	router := SetupRoutes(isoService, env.ISODir, wsHub, env.Config)
+	router := setupTestRouter(env, isoService, wsHub)
 
 	req := httptest.NewRequest(http.MethodGet, "/health", http.NoBody)
 	w := httptest.NewRecorder()
@@ -281,7 +289,7 @@ func TestImagesRoute(t *testing.T) {
 	isoService := service.NewISOService(env.DB, manager, env.ISODir)
 
 	wsHub := ws.NewHub()
-	router := SetupRoutes(isoService, env.ISODir, wsHub, env.Config)
+	router := setupTestRouter(env, isoService, wsHub)
 
 	// Test directory listing
 	req := httptest.NewRequest(http.MethodGet, "/images/", http.NoBody)

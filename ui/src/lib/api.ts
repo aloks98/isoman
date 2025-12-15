@@ -2,8 +2,11 @@ import type {
   APIResponse,
   CreateISORequest,
   ISO,
+  ListISOsParams,
+  ListISOsResponse,
   UpdateISORequest,
 } from '../types/iso';
+import type { DownloadTrend, Stats } from '../types/stats';
 
 /**
  * Base API URL - defaults to same origin in production
@@ -43,11 +46,32 @@ async function apiFetch<T>(
 }
 
 /**
- * List all ISOs
+ * List ISOs with pagination and sorting
  */
-export async function listISOs(): Promise<ISO[]> {
-  const response = await apiFetch<{ isos: ISO[] }>('/api/isos');
-  return response.data?.isos || [];
+export async function listISOsPaginated(
+  params: ListISOsParams = {},
+): Promise<ListISOsResponse> {
+  const searchParams = new URLSearchParams();
+
+  if (params.page) searchParams.set('page', params.page.toString());
+  if (params.pageSize)
+    searchParams.set('page_size', params.pageSize.toString());
+  if (params.sortBy) searchParams.set('sort_by', params.sortBy);
+  if (params.sortDir) searchParams.set('sort_dir', params.sortDir);
+
+  const queryString = searchParams.toString();
+  const url = queryString ? `/api/isos?${queryString}` : '/api/isos';
+
+  const response = await apiFetch<ListISOsResponse>(url);
+  return {
+    isos: response.data?.isos || [],
+    pagination: response.data?.pagination || {
+      page: 1,
+      page_size: 10,
+      total: 0,
+      total_pages: 0,
+    },
+  };
 }
 
 /**
@@ -121,6 +145,33 @@ export async function getHealth(): Promise<{ status: string; time: string }> {
   const response = await apiFetch<{ status: string; time: string }>('/health');
   if (!response.data) {
     throw new Error('Failed to get health status');
+  }
+  return response.data;
+}
+
+/**
+ * Get aggregated statistics
+ */
+export async function getStats(): Promise<Stats> {
+  const response = await apiFetch<Stats>('/api/stats');
+  if (!response.data) {
+    throw new Error('Failed to get statistics');
+  }
+  return response.data;
+}
+
+/**
+ * Get download trends over time
+ */
+export async function getDownloadTrends(
+  period: 'daily' | 'weekly' = 'daily',
+  days: number = 30,
+): Promise<DownloadTrend> {
+  const response = await apiFetch<DownloadTrend>(
+    `/api/stats/trends?period=${period}&days=${days}`,
+  );
+  if (!response.data) {
+    throw new Error('Failed to get download trends');
   }
   return response.data;
 }

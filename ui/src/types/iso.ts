@@ -21,6 +21,7 @@ export interface ISO {
   error_message: string;
   created_at: string;
   completed_at: string | null;
+  download_count: number;
 }
 
 /**
@@ -89,4 +90,32 @@ export interface WSProgressMessage {
     progress: number;
     status: ISOStatus;
   };
+}
+
+/**
+ * Pagination info returned from API
+ */
+export interface PaginationInfo {
+  page: number;
+  page_size: number;
+  total: number;
+  total_pages: number;
+}
+
+/**
+ * Parameters for listing ISOs with pagination and sorting
+ */
+export interface ListISOsParams {
+  page?: number;
+  pageSize?: number;
+  sortBy?: string;
+  sortDir?: 'asc' | 'desc';
+}
+
+/**
+ * Response from listing ISOs with pagination
+ */
+export interface ListISOsResponse {
+  isos: ISO[];
+  pagination: PaginationInfo;
 }

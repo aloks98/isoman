@@ -23,25 +23,26 @@ const (
 
 // ISO represents an ISO file record in the database.
 type ISO struct {
-	CreatedAt    time.Time  `json:"created_at"`
-	CompletedAt  *time.Time `json:"completed_at"`
-	DownloadLink string     `json:"download_link"`
-	ChecksumType string     `json:"checksum_type"`
-	Edition      string     `json:"edition"`
-	FileType     string     `json:"file_type"`
-	Filename     string     `json:"filename"`
-	FilePath     string     `json:"file_path"`
-	ID           string     `json:"id"`
-	Name         string     `json:"name"`
-	Checksum     string     `json:"checksum"`
-	Arch         string     `json:"arch"`
-	DownloadURL  string     `json:"download_url"`
-	ChecksumURL  string     `json:"checksum_url"`
-	Status       ISOStatus  `json:"status"`
-	Version      string     `json:"version"`
-	ErrorMessage string     `json:"error_message"`
-	Progress     int        `json:"progress"`
-	SizeBytes    int64      `json:"size_bytes"`
+	CreatedAt     time.Time  `json:"created_at"`
+	CompletedAt   *time.Time `json:"completed_at"`
+	DownloadLink  string     `json:"download_link"`
+	ChecksumType  string     `json:"checksum_type"`
+	Edition       string     `json:"edition"`
+	FileType      string     `json:"file_type"`
+	Filename      string     `json:"filename"`
+	FilePath      string     `json:"file_path"`
+	ID            string     `json:"id"`
+	Name          string     `json:"name"`
+	Checksum      string     `json:"checksum"`
+	Arch          string     `json:"arch"`
+	DownloadURL   string     `json:"download_url"`
+	ChecksumURL   string     `json:"checksum_url"`
+	Status        ISOStatus  `json:"status"`
+	Version       string     `json:"version"`
+	ErrorMessage  string     `json:"error_message"`
+	Progress      int        `json:"progress"`
+	SizeBytes     int64      `json:"size_bytes"`
+	DownloadCount int64      `json:"download_count"`
 }
 
 // CreateISORequest represents the request to create a new ISO download.

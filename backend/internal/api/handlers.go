@@ -3,10 +3,12 @@ package api
 import (
 	"errors"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
 	"linux-iso-manager/internal/constants"
+	"linux-iso-manager/internal/db"
 	"linux-iso-manager/internal/fileutil"
 	"linux-iso-manager/internal/models"
 	"linux-iso-manager/internal/pathutil"
@@ -30,16 +32,49 @@ func NewHandlers(isoService *service.ISOService, isoDir string) *Handlers {
 	}
 }
 
-// ListISOs returns all ISOs ordered by created_at DESC.
+// ListISOs returns ISOs with optional pagination and sorting.
+// Query params: page (default 1), page_size (default 10), sort_by, sort_dir (asc/desc)
 func (h *Handlers) ListISOs(c *gin.Context) {
-	isos, err := h.isoService.ListISOs()
+	// Parse pagination parameters
+	page := 1
+	if pageStr := c.Query("page"); pageStr != "" {
+		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
+			page = p
+		}
+	}
+
+	pageSize := 10
+	if pageSizeStr := c.Query("page_size"); pageSizeStr != "" {
+		if ps, err := strconv.Atoi(pageSizeStr); err == nil && ps > 0 {
+			pageSize = ps
+		}
+	}
+
+	// Parse sorting parameters
+	sortBy := c.DefaultQuery("sort_by", "created_at")
+	sortDir := c.DefaultQuery("sort_dir", "desc")
+
+	params := db.ListISOsParams{
+		Page:     page,
+		PageSize: pageSize,
+		SortBy:   sortBy,
+		SortDir:  sortDir,
+	}
+
+	result, err := h.isoService.ListISOsPaginated(params)
 	if err != nil {
 		ErrorResponse(c, http.StatusInternalServerError, ErrCodeInternalError, "Failed to list ISOs")
 		return
 	}
 
 	SuccessResponse(c, http.StatusOK, gin.H{
-		"isos": isos,
+		"isos": result.ISOs,
+		"pagination": gin.H{
+			"page":        result.Page,
+			"page_size":   result.PageSize,
+			"total":       result.Total,
+			"total_pages": result.TotalPages,
+		},
 	})
 }
 

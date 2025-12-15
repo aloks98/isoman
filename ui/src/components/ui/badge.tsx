@@ -214,9 +214,7 @@ function BadgeButton({
   asChild = false,
   ...props
 }: React.ComponentProps<'button'> &
-  VariantProps<typeof badgeButtonVariants> & {
-    asChild?: boolean;
-  }) {
+  VariantProps<typeof badgeButtonVariants> & { asChild?: boolean }) {
   const Comp = asChild ? SlotPrimitive.Slot : 'span';
   return (
     <Comp

@@ -83,8 +83,12 @@ func main() {
 	isoService := service.NewISOService(database, manager, isoDir)
 	log.Info("iso service initialized")
 
+	// Initialize Stats service
+	statsService := service.NewStatsService(database)
+	log.Info("stats service initialized")
+
 	// Setup routes
-	router := api.SetupRoutes(isoService, isoDir, wsHub, cfg)
+	router := api.SetupRoutes(isoService, statsService, database, isoDir, wsHub, cfg)
 	log.Info("api routes configured")
 
 	// Create HTTP server

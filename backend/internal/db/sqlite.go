@@ -19,7 +19,7 @@ import (
 const (
 	isoSelectFields = `id, name, version, arch, edition, file_type, filename, file_path, download_link,
 		size_bytes, checksum, checksum_type, download_url, checksum_url,
-		status, progress, error_message, created_at, completed_at`
+		status, progress, error_message, created_at, completed_at, download_count`
 )
 
 // DB wraps the SQLite database connection.
@@ -56,6 +56,7 @@ func scanISO(s scanner) (*models.ISO, error) {
 		&iso.ErrorMessage,
 		&iso.CreatedAt,
 		&iso.CompletedAt,
+		&iso.DownloadCount,
 	)
 	if err != nil {
 		return nil, err
@@ -160,8 +161,8 @@ func (db *DB) CreateISO(iso *models.ISO) error {
 	INSERT INTO isos (
 		id, name, version, arch, edition, file_type, filename, file_path, download_link,
 		size_bytes, checksum, checksum_type, download_url, checksum_url,
-		status, progress, error_message, created_at, completed_at
-	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		status, progress, error_message, created_at, completed_at, download_count
+	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 	_, err := db.conn.Exec(
 		query,
@@ -184,6 +185,7 @@ func (db *DB) CreateISO(iso *models.ISO) error {
 		iso.ErrorMessage,
 		iso.CreatedAt,
 		iso.CompletedAt,
+		iso.DownloadCount,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to insert ISO record (id=%s): %w", iso.ID, err)
@@ -206,10 +208,86 @@ func (db *DB) GetISO(id string) (*models.ISO, error) {
 	return iso, nil
 }
 
-// ListISOs retrieves all ISOs ordered by created_at DESC.
+// ListISOsParams contains parameters for listing ISOs with pagination and sorting.
+type ListISOsParams struct {
+	Page     int    // 1-based page number
+	PageSize int    // Number of items per page
+	SortBy   string // Column to sort by
+	SortDir  string // Sort direction: "asc" or "desc"
+}
+
+// ListISOsResult contains the result of listing ISOs with pagination.
+type ListISOsResult struct {
+	ISOs       []models.ISO
+	Total      int
+	Page       int
+	PageSize   int
+	TotalPages int
+}
+
+// allowedSortColumns defines which columns can be sorted.
+var allowedSortColumns = map[string]bool{
+	"name":       true,
+	"version":    true,
+	"size_bytes": true,
+	"created_at": true,
+	"status":     true,
+}
+
+// ListISOs retrieves all ISOs ordered by created_at DESC (for backwards compatibility).
 func (db *DB) ListISOs() ([]models.ISO, error) {
-	query := fmt.Sprintf("SELECT %s FROM isos ORDER BY created_at DESC", isoSelectFields)
-	rows, err := db.conn.Query(query) //nolint:sqlclosecheck // False positive: rows are closed via deferred closure below
+	result, err := db.ListISOsPaginated(ListISOsParams{
+		Page:     1,
+		PageSize: 10000, // Large number to get all
+		SortBy:   "created_at",
+		SortDir:  "desc",
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.ISOs, nil
+}
+
+// ListISOsPaginated retrieves ISOs with pagination and sorting.
+func (db *DB) ListISOsPaginated(params ListISOsParams) (*ListISOsResult, error) {
+	// Set defaults
+	if params.Page < 1 {
+		params.Page = 1
+	}
+	if params.PageSize < 1 {
+		params.PageSize = 10
+	}
+	if params.PageSize > 100 {
+		params.PageSize = 100
+	}
+
+	// Validate sort column
+	sortBy := "created_at"
+	if params.SortBy != "" && allowedSortColumns[params.SortBy] {
+		sortBy = params.SortBy
+	}
+
+	// Validate sort direction
+	sortDir := "DESC"
+	if params.SortDir == "asc" {
+		sortDir = "ASC"
+	}
+
+	// Get total count
+	var total int
+	countQuery := "SELECT COUNT(*) FROM isos"
+	if err := db.conn.QueryRow(countQuery).Scan(&total); err != nil {
+		return nil, fmt.Errorf("failed to count ISOs: %w", err)
+	}
+
+	// Calculate offset
+	offset := (params.Page - 1) * params.PageSize
+
+	// Build query with sorting and pagination
+	query := fmt.Sprintf("SELECT %s FROM isos ORDER BY %s %s LIMIT ? OFFSET ?",
+		isoSelectFields, sortBy, sortDir)
+
+	rows, err := db.conn.Query(query, params.PageSize, offset) //nolint:sqlclosecheck // False positive: rows are closed via deferred closure below
 	if err != nil {
 		return nil, fmt.Errorf("failed to query ISO list: %w", err)
 	}
@@ -230,7 +308,17 @@ func (db *DB) ListISOs() ([]models.ISO, error) {
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("error iterating ISO rows: %w", err)
 	}
-	return isos, nil
+
+	// Calculate total pages
+	totalPages := (total + params.PageSize - 1) / params.PageSize
+
+	return &ListISOsResult{
+		ISOs:       isos,
+		Total:      total,
+		Page:       params.Page,
+		PageSize:   params.PageSize,
+		TotalPages: totalPages,
+	}, nil
 }
 
 // UpdateISO updates an existing ISO record.
