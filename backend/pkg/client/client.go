@@ -53,10 +53,10 @@ func NewClient(baseURL string, opts ...Option) *Client {
 
 // apiResponse is the raw JSON envelope returned by all ISOMan API endpoints.
 type apiResponse struct {
-	Success bool             `json:"success"`
-	Data    json.RawMessage  `json:"data,omitempty"`
+	Success bool              `json:"success"`
+	Data    json.RawMessage   `json:"data,omitempty"`
 	Error   *apiResponseError `json:"error,omitempty"`
-	Message string           `json:"message,omitempty"`
+	Message string            `json:"message,omitempty"`
 }
 
 type apiResponseError struct {

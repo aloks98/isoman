@@ -69,7 +69,7 @@ linters-settings:
     locale: US
 
   goimports:
-    local-prefixes: linux-iso-manager
+    local-prefixes: github.com/aloks98/isoman
 
 issues:
   exclude-rules:
