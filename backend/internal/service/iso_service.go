@@ -7,12 +7,12 @@ import (
 	"strings"
 	"time"
 
-	"linux-iso-manager/internal/constants"
-	"linux-iso-manager/internal/db"
-	"linux-iso-manager/internal/download"
-	"linux-iso-manager/internal/fileutil"
-	"linux-iso-manager/internal/models"
-	"linux-iso-manager/internal/pathutil"
+	"github.com/aloks98/isoman/backend/internal/constants"
+	"github.com/aloks98/isoman/backend/internal/db"
+	"github.com/aloks98/isoman/backend/internal/download"
+	"github.com/aloks98/isoman/backend/internal/fileutil"
+	"github.com/aloks98/isoman/backend/internal/models"
+	"github.com/aloks98/isoman/backend/internal/pathutil"
 
 	"github.com/google/uuid"
 )

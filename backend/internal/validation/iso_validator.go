@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"strings"
 
-	"linux-iso-manager/internal/constants"
+	"github.com/aloks98/isoman/backend/internal/constants"
 )
 
 // ISOCreateRequest validation.

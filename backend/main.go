@@ -8,16 +8,16 @@ import (
 	"os/signal"
 	"syscall"
 
-	"linux-iso-manager/internal/api"
-	"linux-iso-manager/internal/config"
-	"linux-iso-manager/internal/db"
-	"linux-iso-manager/internal/download"
-	"linux-iso-manager/internal/fileutil"
-	"linux-iso-manager/internal/logger"
-	"linux-iso-manager/internal/models"
-	"linux-iso-manager/internal/pathutil"
-	"linux-iso-manager/internal/service"
-	"linux-iso-manager/internal/ws"
+	"github.com/aloks98/isoman/backend/internal/api"
+	"github.com/aloks98/isoman/backend/internal/config"
+	"github.com/aloks98/isoman/backend/internal/db"
+	"github.com/aloks98/isoman/backend/internal/download"
+	"github.com/aloks98/isoman/backend/internal/fileutil"
+	"github.com/aloks98/isoman/backend/internal/logger"
+	"github.com/aloks98/isoman/backend/internal/models"
+	"github.com/aloks98/isoman/backend/internal/pathutil"
+	"github.com/aloks98/isoman/backend/internal/service"
+	"github.com/aloks98/isoman/backend/internal/ws"
 )
 
 // Version is set at build time via ldflags

@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"time"
 
-	"linux-iso-manager/internal/models"
+	"github.com/aloks98/isoman/backend/internal/models"
 )
 
 // IncrementDownloadCount increments the download count for an ISO.

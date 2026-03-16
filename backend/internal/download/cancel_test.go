@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"linux-iso-manager/internal/testutil"
+	"github.com/aloks98/isoman/backend/internal/testutil"
 )
 
 func TestCancelDownload(t *testing.T) {

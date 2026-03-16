@@ -6,9 +6,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"linux-iso-manager/internal/models"
-	"linux-iso-manager/internal/service"
-	"linux-iso-manager/internal/testutil"
+	"github.com/aloks98/isoman/backend/internal/models"
+	"github.com/aloks98/isoman/backend/internal/service"
+	"github.com/aloks98/isoman/backend/internal/testutil"
 
 	"github.com/gin-gonic/gin"
 )

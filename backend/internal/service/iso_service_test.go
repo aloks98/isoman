@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"linux-iso-manager/internal/download"
-	"linux-iso-manager/internal/models"
-	"linux-iso-manager/internal/testutil"
+	"github.com/aloks98/isoman/backend/internal/download"
+	"github.com/aloks98/isoman/backend/internal/models"
+	"github.com/aloks98/isoman/backend/internal/testutil"
 )
 
 func TestNormalizeName(t *testing.T) {

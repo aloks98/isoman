@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"sync"
 
-	"linux-iso-manager/internal/models"
+	"github.com/aloks98/isoman/backend/internal/models"
 )
 
 // Message types for WebSocket communication.

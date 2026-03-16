@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"linux-iso-manager/internal/httputil"
+	"github.com/aloks98/isoman/backend/internal/httputil"
 )
 
 // Streams the file to avoid memory issues with large ISOs.

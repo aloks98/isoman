@@ -52,7 +52,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.24'
-          cache-dependency-path: backend/go.sum
+          cache-dependency-path: go.sum
 
       - name: Install linting tools
         working-directory: backend
@@ -80,7 +80,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.24'
-          cache-dependency-path: backend/go.sum
+          cache-dependency-path: go.sum
 
       - name: Run tests
         working-directory: backend

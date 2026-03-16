@@ -9,10 +9,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"linux-iso-manager/internal/download"
-	"linux-iso-manager/internal/service"
-	"linux-iso-manager/internal/testutil"
-	"linux-iso-manager/internal/ws"
+	"github.com/aloks98/isoman/backend/internal/download"
+	"github.com/aloks98/isoman/backend/internal/service"
+	"github.com/aloks98/isoman/backend/internal/testutil"
+	"github.com/aloks98/isoman/backend/internal/ws"
 )
 
 // Helper function to create SetupRoutes with test defaults

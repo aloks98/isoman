@@ -36,21 +36,21 @@ WORKDIR /app
 # Install build dependencies
 RUN apk add --no-cache git
 
-# Copy go mod files
-COPY backend/go.mod backend/go.sum ./
+# Copy go mod files (go.mod is at repo root)
+COPY go.mod go.sum ./
 
 # Download dependencies with cache mount
 RUN --mount=type=cache,target=/go/pkg/mod \
     go mod download
 
 # Copy backend source
-COPY backend/ ./
+COPY backend/ ./backend/
 
 # Build backend binary (CGO_ENABLED=0 for static binary)
 # Embed version in binary
 RUN CGO_ENABLED=0 GOOS=linux go build \
     -ldflags="-w -s -X main.Version=${VERSION}" \
-    -o server .
+    -o server ./backend
 
 # ============================================
 # Stage 3: Runtime Image
@@ -73,7 +73,7 @@ COPY --from=backend-builder /app/server ./server
 COPY --from=frontend-builder /app/ui/dist ./ui/dist
 
 # Copy migrations directory from builder
-COPY --from=backend-builder /app/migrations ./migrations
+COPY --from=backend-builder /app/backend/migrations ./migrations
 
 # Copy entrypoint script
 COPY backend/docker-entrypoint.sh /entrypoint.sh

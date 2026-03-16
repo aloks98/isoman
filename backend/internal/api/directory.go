@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"linux-iso-manager/internal/db"
-	"linux-iso-manager/internal/service"
+	"github.com/aloks98/isoman/backend/internal/db"
+	"github.com/aloks98/isoman/backend/internal/service"
 
 	"github.com/gin-gonic/gin"
 )

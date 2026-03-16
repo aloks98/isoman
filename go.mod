@@ -1,4 +1,4 @@
-module linux-iso-manager
+module github.com/aloks98/isoman
 
 go 1.24.4
 

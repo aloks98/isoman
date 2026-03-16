@@ -8,11 +8,11 @@ import (
 	"path/filepath"
 	"time"
 
-	"linux-iso-manager/internal/db"
-	"linux-iso-manager/internal/fileutil"
-	"linux-iso-manager/internal/httputil"
-	"linux-iso-manager/internal/models"
-	"linux-iso-manager/internal/pathutil"
+	"github.com/aloks98/isoman/backend/internal/db"
+	"github.com/aloks98/isoman/backend/internal/fileutil"
+	"github.com/aloks98/isoman/backend/internal/httputil"
+	"github.com/aloks98/isoman/backend/internal/models"
+	"github.com/aloks98/isoman/backend/internal/pathutil"
 )
 
 // ProgressCallback is called when download progress updates.

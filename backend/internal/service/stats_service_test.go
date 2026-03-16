@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"linux-iso-manager/internal/models"
-	"linux-iso-manager/internal/testutil"
+	"github.com/aloks98/isoman/backend/internal/models"
+	"github.com/aloks98/isoman/backend/internal/testutil"
 )
 
 func TestNewStatsService(t *testing.T) {

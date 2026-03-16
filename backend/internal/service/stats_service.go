@@ -3,8 +3,8 @@ package service
 import (
 	"time"
 
-	"linux-iso-manager/internal/db"
-	"linux-iso-manager/internal/models"
+	"github.com/aloks98/isoman/backend/internal/db"
+	"github.com/aloks98/isoman/backend/internal/models"
 )
 
 // StatsService handles statistics-related business logic.

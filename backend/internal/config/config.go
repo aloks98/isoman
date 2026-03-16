@@ -4,7 +4,7 @@ import (
 	"strings"
 	"time"
 
-	"linux-iso-manager/internal/constants"
+	"github.com/aloks98/isoman/backend/internal/constants"
 
 	"github.com/spf13/viper"
 )

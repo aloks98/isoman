@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"os"
 
-	"linux-iso-manager/internal/config"
-	"linux-iso-manager/internal/models"
+	"github.com/aloks98/isoman/backend/internal/config"
+	"github.com/aloks98/isoman/backend/internal/models"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/sqlite"

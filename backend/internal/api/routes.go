@@ -1,10 +1,10 @@
 package api
 
 import (
-	"linux-iso-manager/internal/config"
-	"linux-iso-manager/internal/db"
-	"linux-iso-manager/internal/service"
-	"linux-iso-manager/internal/ws"
+	"github.com/aloks98/isoman/backend/internal/config"
+	"github.com/aloks98/isoman/backend/internal/db"
+	"github.com/aloks98/isoman/backend/internal/service"
+	"github.com/aloks98/isoman/backend/internal/ws"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"

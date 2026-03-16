@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"linux-iso-manager/internal/service"
+	"github.com/aloks98/isoman/backend/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
