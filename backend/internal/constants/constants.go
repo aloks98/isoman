@@ -27,7 +27,7 @@ const (
 	// HTTP server settings.
 	DefaultPort               = "8080"
 	DefaultReadTimeoutSec     = 15
-	DefaultWriteTimeoutSec    = 15
+	DefaultWriteTimeoutSec    = 600 // 10 minutes — large cloud images can be 1-2GB
 	DefaultIdleTimeoutSec     = 60
 	DefaultShutdownTimeoutSec = 5
 
