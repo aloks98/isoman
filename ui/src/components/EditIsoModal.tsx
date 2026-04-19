@@ -155,7 +155,10 @@ export function EditIsoModal({
                 aria-describedby={errors.name ? 'edit-name-error' : undefined}
               />
               {errors.name && (
-                <p id="edit-name-error" className="text-sm text-destructive mt-1">
+                <p
+                  id="edit-name-error"
+                  className="text-sm text-destructive mt-1"
+                >
                   {errors.name.message}
                 </p>
               )}
@@ -175,10 +178,15 @@ export function EditIsoModal({
                 placeholder="24.04"
                 className={errors.version ? 'border-destructive' : ''}
                 aria-invalid={!!errors.version}
-                aria-describedby={errors.version ? 'edit-version-error' : undefined}
+                aria-describedby={
+                  errors.version ? 'edit-version-error' : undefined
+                }
               />
               {errors.version && (
-                <p id="edit-version-error" className="text-sm text-destructive mt-1">
+                <p
+                  id="edit-version-error"
+                  className="text-sm text-destructive mt-1"
+                >
                   {errors.version.message}
                 </p>
               )}
@@ -244,10 +252,15 @@ export function EditIsoModal({
               className={errors.download_url ? 'border-destructive' : ''}
               disabled={!canEditURLs}
               aria-invalid={!!errors.download_url}
-              aria-describedby={errors.download_url ? 'edit-download-url-error' : undefined}
+              aria-describedby={
+                errors.download_url ? 'edit-download-url-error' : undefined
+              }
             />
             {errors.download_url && (
-              <p id="edit-download-url-error" className="text-sm text-destructive mt-1">
+              <p
+                id="edit-download-url-error"
+                className="text-sm text-destructive mt-1"
+              >
                 {errors.download_url.message}
               </p>
             )}
@@ -273,10 +286,15 @@ export function EditIsoModal({
               className={errors.checksum_url ? 'border-destructive' : ''}
               disabled={!canEditURLs}
               aria-invalid={!!errors.checksum_url}
-              aria-describedby={errors.checksum_url ? 'edit-checksum-url-error' : undefined}
+              aria-describedby={
+                errors.checksum_url ? 'edit-checksum-url-error' : undefined
+              }
             />
             {errors.checksum_url && (
-              <p id="edit-checksum-url-error" className="text-sm text-destructive mt-1">
+              <p
+                id="edit-checksum-url-error"
+                className="text-sm text-destructive mt-1"
+              >
                 {errors.checksum_url.message}
               </p>
             )}

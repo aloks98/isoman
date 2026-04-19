@@ -5,7 +5,7 @@ export function WebSocketStatus() {
   const isConnected = useAppStore((state) => state.wsConnected);
 
   return (
-    <div className="flex items-center gap-2 text-xs" role="status" aria-live="polite">
+    <output className="flex items-center gap-2 text-xs" aria-live="polite">
       {isConnected ? (
         <>
           <span className="relative flex h-2 w-2" aria-hidden="true">
@@ -20,6 +20,6 @@ export function WebSocketStatus() {
           <span className="text-destructive">Disconnected</span>
         </>
       )}
-    </div>
+    </output>
   );
 }

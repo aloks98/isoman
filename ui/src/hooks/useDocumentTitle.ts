@@ -7,9 +7,7 @@ const BASE_TITLE = 'ISOMan';
  * Shows "(45%) ISOMan" when downloads are in progress, or just "ISOMan" when idle.
  * Useful for homelabbers who monitor downloads across many tabs.
  */
-export function useDocumentTitle(
-  isos: { status: string; progress: number }[],
-) {
+export function useDocumentTitle(isos: { status: string; progress: number }[]) {
   useEffect(() => {
     const downloading = isos.filter((iso) => iso.status === 'downloading');
 

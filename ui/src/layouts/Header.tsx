@@ -17,7 +17,9 @@ export function Header() {
           >
             <HardDrive className="w-8 h-8 text-primary" />
             <div>
-              <span className="text-2xl font-bold font-mono tracking-tight">ISOMan</span>
+              <span className="text-2xl font-bold font-mono tracking-tight">
+                ISOMan
+              </span>
               <p className="text-sm text-muted-foreground hidden sm:block">
                 Download and manage Linux ISOs
               </p>

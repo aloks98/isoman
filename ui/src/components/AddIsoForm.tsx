@@ -195,10 +195,15 @@ export function AddIsoForm({ onSubmit }: AddIsoFormProps) {
               placeholder="https://example.com/alpine-3.19.1-x86_64.iso"
               className="font-mono text-sm"
               aria-invalid={!!errors.download_url}
-              aria-describedby={errors.download_url ? 'download-url-error' : undefined}
+              aria-describedby={
+                errors.download_url ? 'download-url-error' : undefined
+              }
             />
             {errors.download_url && (
-              <p id="download-url-error" className="text-xs text-destructive mt-1">
+              <p
+                id="download-url-error"
+                className="text-xs text-destructive mt-1"
+              >
                 {errors.download_url.message}
               </p>
             )}
@@ -218,10 +223,15 @@ export function AddIsoForm({ onSubmit }: AddIsoFormProps) {
                 placeholder="https://example.com/alpine-3.19.1-x86_64.iso.sha256"
                 className="font-mono text-sm"
                 aria-invalid={!!errors.checksum_url}
-                aria-describedby={errors.checksum_url ? 'checksum-url-error' : undefined}
+                aria-describedby={
+                  errors.checksum_url ? 'checksum-url-error' : undefined
+                }
               />
               {errors.checksum_url && (
-                <p id="checksum-url-error" className="text-xs text-destructive mt-1">
+                <p
+                  id="checksum-url-error"
+                  className="text-xs text-destructive mt-1"
+                >
                   {errors.checksum_url.message}
                 </p>
               )}

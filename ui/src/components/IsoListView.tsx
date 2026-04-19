@@ -243,7 +243,13 @@ export function IsoListView({
               )}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" mode="icon" size="sm" aria-label="More actions" className="touch-target">
+                  <Button
+                    variant="ghost"
+                    mode="icon"
+                    size="sm"
+                    aria-label="More actions"
+                    className="touch-target"
+                  >
                     <MoreVertical className="w-4 h-4" />
                   </Button>
                 </DropdownMenuTrigger>

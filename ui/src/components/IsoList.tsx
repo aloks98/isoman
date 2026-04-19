@@ -191,9 +191,7 @@ export function IsoList({
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              Delete {isoToDelete?.name}?
-            </AlertDialogTitle>
+            <AlertDialogTitle>Delete {isoToDelete?.name}?</AlertDialogTitle>
             <AlertDialogDescription>
               This will permanently remove the ISO file and checksum from your
               server. This cannot be undone.

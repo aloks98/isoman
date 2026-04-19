@@ -196,7 +196,7 @@ html {
 @utility touch-target {
   position: relative;
   &::after {
-    content: '';
+    content: "";
     position: absolute;
     inset: 50% auto auto 50%;
     transform: translate(-50%, -50%);
