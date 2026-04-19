@@ -104,9 +104,10 @@ export function AddIsoForm({ onSubmit }: AddIsoFormProps) {
                 {...register('name')}
                 placeholder="Alpine Linux"
                 aria-invalid={!!errors.name}
+                aria-describedby={errors.name ? 'name-error' : undefined}
               />
               {errors.name && (
-                <p className="text-xs text-destructive mt-1">
+                <p id="name-error" className="text-xs text-destructive mt-1">
                   {errors.name.message}
                 </p>
               )}
@@ -124,9 +125,10 @@ export function AddIsoForm({ onSubmit }: AddIsoFormProps) {
                 {...register('version')}
                 placeholder="3.19.1"
                 aria-invalid={!!errors.version}
+                aria-describedby={errors.version ? 'version-error' : undefined}
               />
               {errors.version && (
-                <p className="text-xs text-destructive mt-1">
+                <p id="version-error" className="text-xs text-destructive mt-1">
                   {errors.version.message}
                 </p>
               )}
@@ -175,7 +177,7 @@ export function AddIsoForm({ onSubmit }: AddIsoFormProps) {
               <Input
                 id="edition"
                 {...register('edition')}
-                placeholder="minimal, desktop, server"
+                placeholder="e.g. server"
               />
             </div>
           </div>
@@ -193,9 +195,10 @@ export function AddIsoForm({ onSubmit }: AddIsoFormProps) {
               placeholder="https://example.com/alpine-3.19.1-x86_64.iso"
               className="font-mono text-sm"
               aria-invalid={!!errors.download_url}
+              aria-describedby={errors.download_url ? 'download-url-error' : undefined}
             />
             {errors.download_url && (
-              <p className="text-xs text-destructive mt-1">
+              <p id="download-url-error" className="text-xs text-destructive mt-1">
                 {errors.download_url.message}
               </p>
             )}
@@ -215,9 +218,10 @@ export function AddIsoForm({ onSubmit }: AddIsoFormProps) {
                 placeholder="https://example.com/alpine-3.19.1-x86_64.iso.sha256"
                 className="font-mono text-sm"
                 aria-invalid={!!errors.checksum_url}
+                aria-describedby={errors.checksum_url ? 'checksum-url-error' : undefined}
               />
               {errors.checksum_url && (
-                <p className="text-xs text-destructive mt-1">
+                <p id="checksum-url-error" className="text-xs text-destructive mt-1">
                   {errors.checksum_url.message}
                 </p>
               )}

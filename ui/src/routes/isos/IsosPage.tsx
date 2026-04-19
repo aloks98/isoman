@@ -8,6 +8,7 @@ import type { PaginationState, SortingState } from '@tanstack/react-table';
 import { useCallback, useState } from 'react';
 import { EditIsoModal } from '@/components/EditIsoModal';
 import { IsoList } from '@/components/IsoList';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import {
   createISO,
@@ -61,6 +62,9 @@ export function IsosPage() {
     total: 0,
     total_pages: 0,
   };
+
+  // Update browser tab title with download progress
+  useDocumentTitle(isos);
 
   // Handle WebSocket progress updates
   const handleWebSocketMessage = useCallback(
@@ -136,26 +140,38 @@ export function IsosPage() {
     },
   });
 
-  const handleCreate = async (request: CreateISORequest) => {
-    await createMutation.mutateAsync(request);
-  };
+  const handleCreate = useCallback(
+    async (request: CreateISORequest) => {
+      await createMutation.mutateAsync(request);
+    },
+    [createMutation],
+  );
 
-  const handleDelete = (id: string) => {
-    deleteMutation.mutate(id);
-  };
+  const handleDelete = useCallback(
+    (id: string) => {
+      deleteMutation.mutate(id);
+    },
+    [deleteMutation],
+  );
 
-  const handleRetry = (id: string) => {
-    retryMutation.mutate(id);
-  };
+  const handleRetry = useCallback(
+    (id: string) => {
+      retryMutation.mutate(id);
+    },
+    [retryMutation],
+  );
 
-  const handleEdit = (iso: ISO) => {
+  const handleEdit = useCallback((iso: ISO) => {
     setIsoToEdit(iso);
     setEditModalOpen(true);
-  };
+  }, []);
 
-  const handleUpdate = async (id: string, request: UpdateISORequest) => {
-    await updateMutation.mutateAsync({ id, request });
-  };
+  const handleUpdate = useCallback(
+    async (id: string, request: UpdateISORequest) => {
+      await updateMutation.mutateAsync({ id, request });
+    },
+    [updateMutation],
+  );
 
   // Handle pagination changes from DataGrid (0-based pageIndex)
   const handlePaginationChange = useCallback(

@@ -12,7 +12,7 @@
 :root {
   --font-sans: ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Space Mono", ui-monospace, monospace;
-  --background: var(--color-white);
+  --background: oklch(98.5% 0.003 260);
   --foreground: var(--color-zinc-950);
   --card: var(--color-white);
   --card-foreground: var(--color-zinc-950);
@@ -23,11 +23,12 @@
   --secondary: var(--color-zinc-100);
   --secondary-foreground: var(--color-zinc-900);
   --muted: var(--color-zinc-100);
-  --muted-foreground: var(--color-zinc-500);
+  --muted-foreground: var(--color-zinc-600);
   --accent: var(--color-zinc-100);
   --accent-foreground: var(--color-zinc-900);
   --destructive: var(--color-red-600);
   --destructive-foreground: var(--color-white);
+  --success: var(--color-green-600);
   --chart-1: var(--color-blue-500);
   --chart-2: var(--color-green-500);
   --chart-3: var(--color-yellow-500);
@@ -42,22 +43,23 @@
 }
 
 .dark {
-  --background: var(--color-zinc-950);
+  --background: oklch(10% 0.005 260);
   --foreground: var(--color-zinc-100);
-  --card: var(--color-zinc-900);
+  --card: oklch(14% 0.005 260);
   --card-foreground: var(--color-zinc-100);
-  --popover: var(--color-zinc-900);
+  --popover: oklch(14% 0.005 260);
   --popover-foreground: var(--color-zinc-100);
   --primary: var(--color-blue-500);
   --primary-foreground: var(--color-white);
   --secondary: var(--color-zinc-800);
   --secondary-foreground: var(--color-zinc-100);
   --muted: var(--color-zinc-800);
-  --muted-foreground: var(--color-zinc-400);
+  --muted-foreground: var(--color-zinc-300);
   --accent: var(--color-zinc-800);
   --accent-foreground: var(--color-zinc-100);
   --destructive: var(--color-red-500);
   --destructive-foreground: var(--color-white);
+  --success: var(--color-green-500);
   --chart-1: var(--color-blue-500);
   --chart-2: var(--color-green-500);
   --chart-3: var(--color-yellow-500);
@@ -86,6 +88,7 @@
   --color-secondary-foreground: var(--secondary-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -132,6 +135,20 @@
     font-feature-settings:
       "rlig" 1,
       "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Tighten heading line-heights */
+  h1,
+  h2,
+  h3 {
+    line-height: 1.2;
+  }
+
+  /* Tabular nums for monospace data — numbers align and don't jump */
+  .font-mono {
+    font-variant-numeric: tabular-nums;
   }
 
   *:focus-visible {
@@ -173,4 +190,93 @@
 /** Smooth scroll **/
 html {
   scroll-behavior: smooth;
+}
+
+/** Touch Target - ensures 44px minimum touch area on mobile **/
+@utility touch-target {
+  position: relative;
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 50% auto auto 50%;
+    transform: translate(-50%, -50%);
+    min-width: 44px;
+    min-height: 44px;
+    width: 100%;
+    height: 100%;
+  }
+}
+
+/** Custom Animations **/
+@keyframes pop-in {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@utility animate-pop-in {
+  animation: pop-in 250ms cubic-bezier(0.25, 1, 0.5, 1) both;
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes gentle-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes status-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@utility animate-fade-in-up {
+  animation: fade-in-up 300ms cubic-bezier(0.25, 1, 0.5, 1) both;
+}
+
+@utility animate-gentle-float {
+  animation: gentle-float 3s ease-in-out infinite;
+}
+
+@utility animate-status-pulse {
+  animation: status-pulse 2s ease-in-out infinite;
+}
+
+/** Reduced Motion **/
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

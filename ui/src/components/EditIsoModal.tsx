@@ -132,8 +132,8 @@ export function EditIsoModal({
           </DialogTitle>
           <DialogDescription>
             {canEditURLs
-              ? 'Edit ISO details and retry download. All fields can be modified for failed downloads.'
-              : 'Edit ISO metadata. URLs cannot be changed for completed downloads.'}
+              ? 'All fields can be modified for failed downloads. Saving will retry the download.'
+              : 'Only metadata can be changed for completed downloads.'}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4 mt-4">
@@ -151,9 +151,11 @@ export function EditIsoModal({
                 {...register('name')}
                 placeholder="Ubuntu Server"
                 className={errors.name ? 'border-destructive' : ''}
+                aria-invalid={!!errors.name}
+                aria-describedby={errors.name ? 'edit-name-error' : undefined}
               />
               {errors.name && (
-                <p className="text-sm text-destructive mt-1">
+                <p id="edit-name-error" className="text-sm text-destructive mt-1">
                   {errors.name.message}
                 </p>
               )}
@@ -172,9 +174,11 @@ export function EditIsoModal({
                 {...register('version')}
                 placeholder="24.04"
                 className={errors.version ? 'border-destructive' : ''}
+                aria-invalid={!!errors.version}
+                aria-describedby={errors.version ? 'edit-version-error' : undefined}
               />
               {errors.version && (
-                <p className="text-sm text-destructive mt-1">
+                <p id="edit-version-error" className="text-sm text-destructive mt-1">
                   {errors.version.message}
                 </p>
               )}
@@ -220,7 +224,7 @@ export function EditIsoModal({
               <Input
                 id="edition"
                 {...register('edition')}
-                placeholder="minimal, desktop, server..."
+                placeholder="e.g. server"
               />
             </div>
           </div>
@@ -239,9 +243,11 @@ export function EditIsoModal({
               placeholder="https://example.com/iso/file.iso"
               className={errors.download_url ? 'border-destructive' : ''}
               disabled={!canEditURLs}
+              aria-invalid={!!errors.download_url}
+              aria-describedby={errors.download_url ? 'edit-download-url-error' : undefined}
             />
             {errors.download_url && (
-              <p className="text-sm text-destructive mt-1">
+              <p id="edit-download-url-error" className="text-sm text-destructive mt-1">
                 {errors.download_url.message}
               </p>
             )}
@@ -266,9 +272,11 @@ export function EditIsoModal({
               placeholder="https://example.com/iso/file.iso.sha256"
               className={errors.checksum_url ? 'border-destructive' : ''}
               disabled={!canEditURLs}
+              aria-invalid={!!errors.checksum_url}
+              aria-describedby={errors.checksum_url ? 'edit-checksum-url-error' : undefined}
             />
             {errors.checksum_url && (
-              <p className="text-sm text-destructive mt-1">
+              <p id="edit-checksum-url-error" className="text-sm text-destructive mt-1">
                 {errors.checksum_url.message}
               </p>
             )}

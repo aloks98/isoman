@@ -22,7 +22,10 @@ export function ProgressBar({
           {progress}%
         </span>
       </div>
-      <Progress value={progress} indicatorClassName={getStatusColor(status)} />
+      <Progress
+        value={progress}
+        indicatorClassName={`${getStatusColor(status)}${status === 'downloading' ? ' animate-status-pulse' : ''}`}
+      />
     </div>
   );
 }

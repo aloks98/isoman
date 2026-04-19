@@ -43,9 +43,11 @@ export function StatsPage() {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <p className="text-lg text-destructive">Failed to load statistics</p>
+          <p className="text-lg text-destructive">
+            Could not load statistics
+          </p>
           <p className="text-sm text-muted-foreground mt-2">
-            Please try again later
+            Check that the backend is running, then refresh the page.
           </p>
         </div>
       </div>
@@ -54,8 +56,8 @@ export function StatsPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold">Statistics</h1>
+      <div className="animate-fade-in-up">
+        <h1 className="text-2xl font-bold">Statistics</h1>
         <p className="text-muted-foreground mt-1">
           Overview of your ISO collection and download activity
         </p>
@@ -63,30 +65,47 @@ export function StatsPage() {
 
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatsCard
-          title="Total ISOs"
-          value={stats.total_isos}
-          icon={<Package className="h-4 w-4 text-muted-foreground" />}
-          description={`${stats.completed_isos} complete, ${stats.failed_isos} failed`}
-        />
-        <StatsCard
-          title="Total Storage"
-          value={formatBytes(stats.total_size_bytes)}
-          icon={<HardDrive className="h-4 w-4 text-muted-foreground" />}
-          description="Used by completed ISOs"
-        />
-        <StatsCard
-          title="Total Downloads"
-          value={stats.total_downloads.toLocaleString()}
-          icon={<Download className="h-4 w-4 text-muted-foreground" />}
-          description="All-time download count"
-        />
-        <StatsCard
-          title="Bandwidth Saved"
-          value={formatBytes(stats.bandwidth_saved)}
-          icon={<TrendingUp className="h-4 w-4 text-muted-foreground" />}
-          description="By caching ISOs locally"
-        />
+        <div className="animate-fade-in-up" style={{ animationDelay: '0ms' }}>
+          <StatsCard
+            title="Total ISOs"
+            value={stats.total_isos}
+            icon={<Package className="h-4 w-4 text-blue-500" aria-hidden="true" />}
+            description={`${stats.completed_isos} complete, ${stats.failed_isos} failed`}
+          />
+        </div>
+        <div
+          className="animate-fade-in-up"
+          style={{ animationDelay: '75ms' }}
+        >
+          <StatsCard
+            title="Total Storage"
+            value={formatBytes(stats.total_size_bytes)}
+            icon={<HardDrive className="h-4 w-4 text-amber-500" aria-hidden="true" />}
+            description="Used by completed ISOs"
+          />
+        </div>
+        <div
+          className="animate-fade-in-up"
+          style={{ animationDelay: '150ms' }}
+        >
+          <StatsCard
+            title="Total Downloads"
+            value={stats.total_downloads.toLocaleString()}
+            icon={<Download className="h-4 w-4 text-emerald-500" aria-hidden="true" />}
+            description="All-time download count"
+          />
+        </div>
+        <div
+          className="animate-fade-in-up"
+          style={{ animationDelay: '225ms' }}
+        >
+          <StatsCard
+            title="Bandwidth Saved"
+            value={formatBytes(stats.bandwidth_saved)}
+            icon={<TrendingUp className="h-4 w-4 text-cyan-500" aria-hidden="true" />}
+            description="By caching ISOs locally"
+          />
+        </div>
       </div>
 
       {/* Charts Row */}
@@ -94,7 +113,7 @@ export function StatsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
+              <BarChart3 className="h-5 w-5 text-blue-500" />
               ISOs by Architecture
             </CardTitle>
           </CardHeader>
@@ -106,7 +125,7 @@ export function StatsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
+              <BarChart3 className="h-5 w-5 text-emerald-500" />
               ISOs by Status
             </CardTitle>
           </CardHeader>
@@ -124,7 +143,7 @@ export function StatsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
+            <TrendingUp className="h-5 w-5 text-cyan-500" />
             Download Trends (Last 30 Days)
           </CardTitle>
         </CardHeader>
@@ -147,7 +166,7 @@ export function StatsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Download className="h-5 w-5" />
+            <Download className="h-5 w-5 text-amber-500" />
             Top Downloaded ISOs
           </CardTitle>
         </CardHeader>
@@ -161,7 +180,7 @@ export function StatsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
+              <BarChart3 className="h-5 w-5 text-purple-500" />
               ISOs by Edition
             </CardTitle>
           </CardHeader>

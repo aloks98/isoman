@@ -243,7 +243,7 @@ export function IsoListView({
               )}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" mode="icon" size="sm">
+                  <Button variant="ghost" mode="icon" size="sm" aria-label="More actions" className="touch-target">
                     <MoreVertical className="w-4 h-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -254,11 +254,11 @@ export function IsoListView({
                     }
                   >
                     {copiedKey === `${copyKey}-download` ? (
-                      <Check className="w-4 h-4 mr-2 text-green-500" />
+                      <Check className="w-4 h-4 mr-2 text-success animate-pop-in" />
                     ) : (
                       <Copy className="w-4 h-4 mr-2" />
                     )}
-                    Copy URL
+                    Copy Download URL
                   </DropdownMenuItem>
                   {checksumUrl && (
                     <DropdownMenuItem
@@ -267,7 +267,7 @@ export function IsoListView({
                       }
                     >
                       {copiedKey === `${copyKey}-checksum` ? (
-                        <Check className="w-4 h-4 mr-2 text-green-500" />
+                        <Check className="w-4 h-4 mr-2 text-success animate-pop-in" />
                       ) : (
                         <Copy className="w-4 h-4 mr-2" />
                       )}
@@ -286,7 +286,7 @@ export function IsoListView({
                       rel="noopener noreferrer"
                     >
                       <ExternalLink className="w-4 h-4 mr-2" />
-                      View Source
+                      Original URL
                     </a>
                   </DropdownMenuItem>
                   <DropdownMenuItem
@@ -343,7 +343,7 @@ export function IsoListView({
           headerBackground: true,
           width: 'fixed',
         }}
-        emptyMessage="No ISOs found"
+        emptyMessage="No ISOs yet"
       >
         <DataGridTable />
         {pagination.total > 0 && (

@@ -7,7 +7,7 @@ import {
   Loader2,
   Server,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,6 +31,12 @@ import { AddIsoForm } from './AddIsoForm';
 import { IsoCard } from './IsoCard';
 import { IsoListView } from './IsoListView';
 import { WebSocketStatus } from './WebSocketStatus';
+
+const LOADING_MESSAGES = [
+  'Checking your ISOs...',
+  'Reading from database...',
+  'Fetching download status...',
+];
 
 interface IsoListProps {
   isos: ISO[];
@@ -84,12 +90,7 @@ export function IsoList({
   };
 
   if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
-        <Loader2 className="w-12 h-12 animate-spin text-primary" />
-        <p className="text-muted-foreground">Loading ISOs...</p>
-      </div>
-    );
+    return <LoadingState />;
   }
 
   return (
@@ -102,7 +103,7 @@ export function IsoList({
         </div>
       )}
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between animate-fade-in-up">
         <div>
           <h2 className="text-2xl font-bold">ISO Downloads</h2>
           <div className="flex items-center gap-3">
@@ -119,8 +120,8 @@ export function IsoList({
               variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
               mode="icon"
               size="sm"
-              className="rounded-none rounded-l-md"
-              title="Grid view"
+              className="rounded-none rounded-l-md touch-target"
+              aria-label="Grid view"
             >
               <LayoutGrid className="w-4 h-4" />
             </Button>
@@ -129,8 +130,8 @@ export function IsoList({
               variant={viewMode === 'list' ? 'secondary' : 'ghost'}
               mode="icon"
               size="sm"
-              className="rounded-none rounded-r-md"
-              title="List view"
+              className="rounded-none rounded-r-md touch-target"
+              aria-label="List view"
             >
               <List className="w-4 h-4" />
             </Button>
@@ -141,7 +142,7 @@ export function IsoList({
 
       {pagination.total === 0 ? (
         <div className="flex flex-col items-center justify-center min-h-[300px] gap-4 border-2 border-dashed border-border rounded-lg">
-          <Server className="w-16 h-16 text-muted-foreground/50" />
+          <Server className="w-16 h-16 text-primary/30 animate-gentle-float" />
           <div className="text-center">
             <p className="text-lg font-medium">No ISOs yet</p>
             <p className="text-sm text-muted-foreground">
@@ -151,15 +152,20 @@ export function IsoList({
         </div>
       ) : viewMode === 'grid' ? (
         <div className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {isos.map((iso) => (
-              <IsoCard
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {isos.map((iso, index) => (
+              <div
                 key={iso.id}
-                iso={iso}
-                onDelete={handleDelete}
-                onRetry={onRetryISO}
-                onEdit={onEditISO}
-              />
+                className="animate-fade-in-up"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <IsoCard
+                  iso={iso}
+                  onDelete={handleDelete}
+                  onRetry={onRetryISO}
+                  onEdit={onEditISO}
+                />
+              </div>
             ))}
           </div>
           {/* Pagination for grid view */}
@@ -185,17 +191,18 @@ export function IsoList({
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete ISO?</AlertDialogTitle>
+            <AlertDialogTitle>
+              Delete {isoToDelete?.name}?
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete{' '}
-              <strong>{isoToDelete?.name}</strong>? This action cannot be undone
-              and will remove the ISO file from your server.
+              This will permanently remove the ISO file and checksum from your
+              server. This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete}>
-              Delete
+              Delete ISO
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -207,6 +214,30 @@ export function IsoList({
 interface GridPaginationProps {
   pagination: PaginationInfo;
   onPaginationChange: (pagination: PaginationState) => void;
+}
+
+function LoadingState() {
+  const [msgIndex, setMsgIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setMsgIndex((i) => (i + 1) % LOADING_MESSAGES.length);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+      <Loader2 className="w-12 h-12 animate-spin text-primary" />
+      <p
+        className="text-muted-foreground transition-opacity duration-300"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        {LOADING_MESSAGES[msgIndex]}
+      </p>
+    </div>
+  );
 }
 
 function GridPagination({
@@ -274,6 +305,8 @@ function GridPagination({
             size="sm"
             onClick={handlePreviousPage}
             disabled={page <= 1}
+            aria-label="Previous page"
+            className="touch-target"
           >
             <ChevronLeft className="w-4 h-4" />
           </Button>
@@ -282,6 +315,8 @@ function GridPagination({
             mode="icon"
             size="sm"
             onClick={handleNextPage}
+            aria-label="Next page"
+            className="touch-target"
             disabled={page >= total_pages}
           >
             <ChevronRight className="w-4 h-4" />

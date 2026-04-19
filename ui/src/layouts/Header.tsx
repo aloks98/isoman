@@ -8,7 +8,7 @@ export function Header() {
   const isStatsPage = location.pathname === '/stats';
 
   return (
-    <header className="border-b border-border bg-card text-card-foreground">
+    <header className="border-b border-border bg-card text-card-foreground border-t-2 border-t-primary">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <Link
@@ -17,8 +17,8 @@ export function Header() {
           >
             <HardDrive className="w-8 h-8 text-primary" />
             <div>
-              <h1 className="text-2xl font-bold font-mono">ISOMan</h1>
-              <p className="text-sm text-muted-foreground">
+              <span className="text-2xl font-bold font-mono tracking-tight">ISOMan</span>
+              <p className="text-sm text-muted-foreground hidden sm:block">
                 Download and manage Linux ISOs
               </p>
             </div>

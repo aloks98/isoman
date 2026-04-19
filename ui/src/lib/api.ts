@@ -33,7 +33,9 @@ async function apiFetch<T>(
     const data: APIResponse<T> = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.error?.message || 'An error occurred');
+      throw new Error(
+        data.error?.message || 'Something went wrong. Try refreshing the page.',
+      );
     }
 
     return data;
@@ -41,7 +43,7 @@ async function apiFetch<T>(
     if (error instanceof Error) {
       throw error;
     }
-    throw new Error('Network error occurred');
+    throw new Error('Could not reach the server. Check your connection.');
   }
 }
 

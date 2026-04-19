@@ -36,7 +36,7 @@ export function IsoCard({ iso, onDelete, onRetry, onEdit }: IsoCardProps) {
   const downloadUrl = getFullDownloadUrl(iso.download_link);
 
   return (
-    <Card>
+    <Card className="transition-[transform,box-shadow,border-color] duration-200 hover:border-primary/30 hover:-translate-y-0.5 hover:shadow-md hover:shadow-black/5">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 py-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 mb-2">
@@ -56,12 +56,12 @@ export function IsoCard({ iso, onDelete, onRetry, onEdit }: IsoCardProps) {
               </>
             )}
             <span>•</span>
-            <span className="uppercase">{iso.file_type}</span>
+            <span className="uppercase tracking-wider">{iso.file_type}</span>
           </div>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" mode="icon" size="sm">
+            <Button variant="ghost" mode="icon" size="sm" aria-label="More actions" className="touch-target">
               <MoreVertical className="w-4 h-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -79,7 +79,7 @@ export function IsoCard({ iso, onDelete, onRetry, onEdit }: IsoCardProps) {
                 rel="noopener noreferrer"
               >
                 <ExternalLink className="w-4 h-4 mr-2" />
-                View Source
+                Original URL
               </a>
             </DropdownMenuItem>
             <DropdownMenuItem
@@ -115,14 +115,20 @@ export function IsoCard({ iso, onDelete, onRetry, onEdit }: IsoCardProps) {
             </div>
           )}
           {iso.checksum && (
-            <div className="flex justify-between">
+            <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Checksum:</span>
-              <span
-                className="font-mono text-xs truncate max-w-[200px]"
-                title={iso.checksum}
+              <button
+                type="button"
+                onClick={() => copyToClipboard(iso.checksum, 'hash')}
+                className="font-mono text-xs truncate max-w-[200px] cursor-pointer hover:text-foreground transition-colors"
+                aria-label="Copy full checksum"
               >
-                {iso.checksum.substring(0, 16)}...
-              </span>
+                {copiedKey === 'hash' ? (
+                  <span className="text-success">Copied</span>
+                ) : (
+                  <>{iso.checksum.substring(0, 16)}...</>
+                )}
+              </button>
             </div>
           )}
           <div className="flex justify-between">
@@ -181,13 +187,13 @@ export function IsoCard({ iso, onDelete, onRetry, onEdit }: IsoCardProps) {
               >
                 {copiedKey === 'download' ? (
                   <>
-                    <Check className="w-4 h-4" />
+                    <Check className="w-4 h-4 animate-pop-in text-success" />
                     Copied
                   </>
                 ) : (
                   <>
                     <Copy className="w-4 h-4" />
-                    Copy URL
+                    Copy Download URL
                   </>
                 )}
               </Button>
@@ -199,7 +205,7 @@ export function IsoCard({ iso, onDelete, onRetry, onEdit }: IsoCardProps) {
                 >
                   {copiedKey === 'checksum' ? (
                     <>
-                      <Check className="w-4 h-4" />
+                      <Check className="w-4 h-4 animate-pop-in text-success" />
                       Copied
                     </>
                   ) : (
